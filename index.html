@@ -479,13 +479,6 @@
             gap: 10px;
         }
 
-        .dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            opacity: 0.4;
-        }
-
         .preview-frame {
             flex: 1;
             width: 100%;
@@ -779,9 +772,6 @@
                     </aside>
                     <div class="preview-container">
                         <div class="preview-header">
-                            <div class="dot" style="background: #ff5f56;"></div>
-                            <div class="dot" style="background: #ffbd2e;"></div>
-                            <div class="dot" style="background: #27c93f;"></div>
                             <div
                                 style="flex: 1; text-align: center; font-size: 11px; color: #999; font-weight: 600; letter-spacing: 1px;">
                                 PREVIEW.BRUSHAI.LOCAL</div>
@@ -792,6 +782,18 @@
 
                 <footer class="control-dock" id="editor-dock">
                     <div class="dock-loading"></div>
+
+                    <div class="dock-model-selector" id="type-selector" style="width: 120px;">
+                        <span id="current-type">Agent</span>
+                        <svg class="dropdown-arrow" viewBox="0 0 24 24" width="14" height="14">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                        <div class="dropdown-menu" id="type-menu" style="bottom: 80px;">
+                            <div class="model-option selected" data-type="agent">Agent</div>
+                            <div class="model-option" data-type="chat">Chat</div>
+                        </div>
+                    </div>
+
                     <div class="dock-model-selector" id="dock-model-dropdown">
                         <span id="dock-selected-model">OpenAI Fast</span>
                         <svg class="dropdown-arrow" viewBox="0 0 24 24" width="16" height="16">
@@ -847,19 +849,52 @@
         const historySidebar = document.getElementById('history-sidebar');
 
         let promptHistory = [];
+        let currentMode = 'agent';
+        let chatHistory = "";
 
         function renderHistory() {
             if (!historySidebar) return;
             historySidebar.innerHTML = '';
-            promptHistory.forEach((item, index) => {
-                const div = document.createElement('div');
-                div.className = 'history-item';
-                div.innerHTML = `<span>Version ${index + 1}</span>${item}`;
-                historySidebar.appendChild(div);
-            });
-            // Auto-scroll to bottom
+
+            if (currentMode === 'agent') {
+                promptHistory.forEach((item, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'history-item';
+                    div.innerHTML = `<span>Version ${index + 1}</span>${item}`;
+                    historySidebar.appendChild(div);
+                });
+            } else {
+                if (chatHistory) {
+                    const div = document.createElement('div');
+                    div.className = 'history-item';
+                    div.innerHTML = `<span>Chat Session</span>${chatHistory}`;
+                    historySidebar.appendChild(div);
+                }
+            }
             historySidebar.scrollTop = historySidebar.scrollHeight;
         }
+
+        // Type Selector Logic
+        const typeSelector = document.getElementById('type-selector');
+        const typeMenu = document.getElementById('type-menu');
+        const typeOptions = typeMenu.querySelectorAll('.model-option');
+
+        typeSelector.addEventListener('click', (e) => {
+            e.stopPropagation();
+            typeMenu.style.display = typeMenu.style.display === 'flex' ? 'none' : 'flex';
+        });
+
+        typeOptions.forEach(opt => {
+            opt.addEventListener('click', (e) => {
+                e.stopPropagation();
+                currentMode = opt.getAttribute('data-type');
+                document.getElementById('current-type').textContent = opt.textContent;
+                typeOptions.forEach(o => o.classList.remove('selected'));
+                opt.classList.add('selected');
+                typeMenu.style.display = 'none';
+                renderHistory();
+            });
+        });
 
         async function fetchAIResponse(prompt, model) {
             try {
@@ -881,14 +916,18 @@
             if (!prompt) return;
             editorDock.classList.add('loading');
 
-            // Log history
-            promptHistory.push(prompt);
-            renderHistory();
-
             const modelId = 'openai-fast';
             const aiResponse = await fetchAIResponse(prompt, modelId);
-            const doc = websitePreview.contentDocument || websitePreview.contentWindow.document;
-            doc.open(); doc.write(aiResponse); doc.close();
+
+            if (currentMode === 'agent') {
+                promptHistory.push(prompt);
+                const doc = websitePreview.contentDocument || websitePreview.contentWindow.document;
+                doc.open(); doc.write(aiResponse); doc.close();
+            } else {
+                chatHistory += (chatHistory ? "<br><br>" : "") + "<b>User:</b> " + prompt + "<br><b>AI:</b> " + aiResponse.substring(0, 500) + (aiResponse.length > 500 ? "..." : "");
+            }
+
+            renderHistory();
             editorDock.classList.remove('loading');
         }
 
