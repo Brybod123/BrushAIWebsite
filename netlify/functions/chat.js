@@ -1,4 +1,5 @@
-const fetch = require('node-fetch');
+// Native fetch is available in Node.js 18+ which Netlify uses by default.
+
 
 exports.handler = async (event, context) => {
     // Only allow POST requests
