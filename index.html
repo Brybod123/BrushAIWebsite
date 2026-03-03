@@ -1,0 +1,1564 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Anodized Aluminum - Brushed Metal Interface</title>
+    <meta name="description"
+        content="A realistic anodized aluminum texture created with pure CSS and SVG filters, featuring a dynamic interactive lighting effect.">
+    <style>
+        :root {
+            /* Outer Surface (Black Anodized) */
+            --outer-base: #0a0a0b;
+            --outer-light: #1c1c1e;
+            --outer-dark: #000000;
+
+            /* Inner Surface (Bright Aluminum) */
+            --inner-base: #d1d2d5;
+            --inner-light: #f0f0f2;
+            --inner-dark: #a8a9ad;
+
+            --inner-border: #ffffff;
+            --accent-glow: rgba(255, 255, 255, 0.9);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body,
+        html {
+            width: 100%;
+            height: 100%;
+            /* overflow: hidden; */
+            /* Removed as per new code structure */
+            background-color: var(--aluminum-base);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* The main outer aluminum background (Black) */
+        .aluminum-surface {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            background: radial-gradient(circle at 50% 50%,
+                    var(--outer-light) 0%,
+                    var(--outer-base) 60%,
+                    var(--outer-dark) 100%);
+        }
+
+        /* SVG Noise Texture - global specularity */
+        .noise-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.15;
+            pointer-events: none;
+            mix-blend-mode: overlay;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            z-index: 10;
+        }
+
+        /* Brushed grain - global */
+        .brushed-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(90deg,
+                    transparent,
+                    transparent 1px,
+                    rgba(255, 255, 255, 0.03) 1px,
+                    rgba(255, 255, 255, 0.03) 2px);
+            pointer-events: none;
+            opacity: 0.4;
+            z-index: 10;
+        }
+
+        /* The inner rectangle (Bright Gray) */
+        .inner-panel {
+            position: relative;
+            width: 90vw;
+            height: 90vh;
+            background: radial-gradient(circle at 50% 50%,
+                    var(--inner-light) 0%,
+                    var(--inner-base) 60%,
+                    var(--inner-dark) 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            z-index: 1;
+
+            /* The bright line outline */
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow:
+                0 0 0 1px rgba(255, 255, 255, 0.1),
+                0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        /* The specific "brighter line" requested */
+        .inner-panel::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border: 1.5px solid var(--inner-border);
+            border-radius: 8px;
+            pointer-events: none;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            z-index: 5;
+        }
+
+        /* Sidebar Styling - Fixed Right */
+        .sidebar {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px 0;
+            border-left: 1px solid rgba(0, 0, 0, 0.05);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), transparent);
+            z-index: 20;
+        }
+
+        /* Logo Styling */
+        .logo-container {
+            width: 44px;
+            min-width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 50px;
+            background: rgba(0, 0, 0, 0.03);
+            box-shadow:
+                inset 1px 1px 2px rgba(0, 0, 0, 0.15),
+                0.5px 0.5px 0.5px rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .logo-text {
+            font-size: 18px;
+            font-weight: 700;
+            color: rgba(0, 0, 0, 0.45);
+            text-shadow:
+                -0.5px -0.5px 0.5px rgba(0, 0, 0, 0.2),
+                0.5px 0.5px 0.5px rgba(255, 255, 255, 0.8);
+            display: flex;
+            align-items: baseline;
+        }
+
+        .logo-text span {
+            font-size: 12px;
+            font-weight: 500;
+            margin-left: -1px;
+        }
+
+        /* Sidebar Nav Engraved Icons */
+        .nav-items-top {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            flex-grow: 1;
+        }
+
+        .nav-item {
+            width: 100%;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .nav-item svg {
+            width: 24px;
+            height: 24px;
+            fill: none;
+            stroke: rgba(0, 0, 0, 0.35);
+            stroke-width: 1.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            filter: drop-shadow(0.5px 0.5px 0.5px rgba(255, 255, 255, 0.8));
+        }
+
+        /* Engraved Icon Shadow Effect */
+        .nav-item::after {
+            content: "";
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background: rgba(0, 0, 0, 0.05);
+            filter: blur(1.5px);
+            z-index: -1;
+            opacity: 0.5;
+        }
+
+        .nav-item:hover svg {
+            stroke: rgba(0, 0, 0, 0.6);
+            transform: scale(1.05);
+        }
+
+        /* Expansion Drawer - Only at the bottom */
+        .bottom-drawer {
+            position: absolute;
+            bottom: 30px;
+            right: 18px;
+            /* Start inside the sidebar */
+            width: 44px;
+            height: 44px;
+            background: radial-gradient(circle at 50% 50%, var(--inner-light) 0%, var(--inner-base) 100%);
+            border-radius: 22px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            /* overflow: hidden; */
+            /* Removed to allow dropdown to extend */
+            display: flex;
+            flex-direction: column;
+            z-index: 15;
+        }
+
+        .bottom-drawer.expanded {
+            width: 400px;
+            height: 240px;
+            border-radius: 12px;
+            padding: 20px;
+            right: 18px;
+            background: radial-gradient(circle at 90% 90%, var(--inner-light) 0%, var(--inner-base) 100%);
+            z-index: 30;
+            /* Elevated when expanded */
+        }
+
+        /* The Chevron Button inside the drawer */
+        .chevron-toggle {
+            width: 44px;
+            height: 44px;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: absolute;
+            top: 0;
+            right: 0;
+            transition: transform 0.4s ease;
+            z-index: 25;
+        }
+
+        .expanded .chevron-toggle {
+            transform: rotate(180deg);
+            /* Flip when open */
+        }
+
+        /* Content inside the drawer */
+        .drawer-content {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 40px;
+            pointer-events: none;
+        }
+
+        .expanded .drawer-content {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Engraved Textarea Style */
+        .engraved-input {
+            grid-column: span 3;
+            background: rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            padding: 12px;
+            font-family: inherit;
+            color: rgba(0, 0, 0, 0.6);
+            resize: none;
+            height: 100px;
+            outline: none;
+            box-shadow:
+                inset 2px 2px 4px rgba(0, 0, 0, 0.1),
+                1px 1px 1px rgba(255, 255, 255, 0.8);
+            font-size: 13px;
+        }
+
+        /* Custom Dropdown Styling */
+        .model-selection {
+            grid-column: span 3;
+            position: relative;
+            margin-bottom: 12px;
+            z-index: 100;
+        }
+
+        .dropdown-trigger {
+            background: rgba(0, 0, 0, 0.03);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            box-shadow:
+                inset 1px 1px 2px rgba(0, 0, 0, 0.1),
+                0.5px 0.5px 0.5px rgba(255, 255, 255, 0.8);
+            transition: all 0.2s ease;
+        }
+
+        .dropdown-trigger:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(0, 0, 0, 0.15);
+        }
+
+        .dropdown-trigger .selected-value {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .dropdown-arrow {
+            width: 14px;
+            height: 14px;
+            stroke: rgba(0, 0, 0, 0.4);
+            stroke-width: 2;
+            fill: none;
+            transition: transform 0.3s ease;
+        }
+
+        .model-selection.open .dropdown-arrow {
+            transform: rotate(180deg);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            bottom: calc(100% + 8px);
+            /* Open upwards to stay inside drawer */
+            left: 0;
+            right: 0;
+            background: radial-gradient(circle at 50% 50%, var(--inner-light) 0%, var(--inner-base) 100%);
+            border: 1px solid rgba(0, 0, 0, 0.15);
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            display: none;
+            flex-direction: column;
+            padding: 6px;
+            z-index: 101;
+            transform-origin: bottom;
+            animation: slideUp 0.2s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .model-selection.open .dropdown-menu {
+            display: flex;
+        }
+
+        .model-option {
+            padding: 8px 12px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .model-option:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .model-option.selected {
+            background: rgba(0, 0, 0, 0.05);
+            pointer-events: none;
+        }
+
+        .model-logo {
+            width: 18px;
+            height: 18px;
+            object-fit: contain;
+            filter: grayscale(0.5);
+        }
+
+        .model-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(0, 0, 0, 0.7);
+        }
+
+        /* Project Grid Area */
+        .main-content {
+            flex: 1;
+            height: 100%;
+            padding: 60px;
+            padding-right: 140px;
+            /* Space for sidebar and drawer */
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: flex-start;
+        }
+
+        /* YouTube Style Project Grid */
+        .project-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 32px;
+            width: 100%;
+        }
+
+        /* YouTube Style Card */
+        .project-card {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            cursor: pointer;
+            transition: transform 0.2s cubic-bezier(0.33, 1, 0.68, 1);
+            position: relative;
+        }
+
+        .project-card:hover {
+            transform: scale(1.02);
+            z-index: 10;
+        }
+
+        .project-card:active {
+            transform: scale(0.98);
+        }
+
+        /* Square Thumbnail Area */
+        .card-thumbnail {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.1));
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .project-card:hover .card-thumbnail {
+            border-radius: 0px;
+            border-color: rgba(0, 0, 0, 0.2);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.1));
+        }
+
+        /* Metallic pattern in thumbnail */
+        .card-thumbnail::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.02) 0px, rgba(0, 0, 0, 0.02) 1px, transparent 1px, transparent 10px);
+            opacity: 0.5;
+        }
+
+        /* Card Details Area */
+        .card-details {
+            display: flex;
+            gap: 12px;
+            padding: 4px 0;
+            position: relative;
+        }
+
+        .card-avatar {
+            width: 36px;
+            height: 36px;
+            background: rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            border-radius: 4px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 14px;
+            color: rgba(0, 0, 0, 0.3);
+        }
+
+        .card-info {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            padding-right: 24px;
+        }
+
+        .project-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: rgba(0, 0, 0, 0.8);
+            line-height: 1.2;
+            margin-bottom: 6px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            /* Standard property */
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .project-meta {
+            font-size: 12px;
+            color: rgba(0, 0, 0, 0.4);
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        /* Dropdown Position */
+        .card-actions {
+            position: absolute;
+            top: 0;
+            right: -4px;
+        }
+
+        .action-toggle {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .project-card:hover .action-toggle {
+            opacity: 1;
+        }
+
+        .action-toggle:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .action-toggle svg {
+            width: 18px;
+            height: 18px;
+            fill: rgba(0, 0, 0, 0.5);
+        }
+
+        /* Strong Dropdown Style */
+        .card-menu {
+            position: absolute;
+            top: 30px;
+            right: 0;
+            background: #000;
+            border: 1px solid #333;
+            border-radius: 4px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+            padding: 8px 0;
+            display: none;
+            flex-direction: column;
+            width: 180px;
+            z-index: 100;
+        }
+
+        .card-actions.open .card-menu {
+            display: flex;
+        }
+
+        .menu-item {
+            padding: 10px 16px;
+            font-size: 13px;
+            color: #fff;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            transition: background 0.2s ease;
+        }
+
+        .menu-item:hover {
+            background: #222;
+        }
+
+        /* Project Detail View Overlay */
+        .project-view {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 50% 50%, var(--inner-light) 0%, var(--inner-base) 60%, var(--inner-dark) 100%);
+            z-index: 200;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px;
+            overflow-y: auto;
+            transform: scale(1.1);
+            /* Start slightly larger */
+        }
+
+        .project-view.active {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: auto;
+        }
+
+        /* The Floating Pill Header */
+        .project-pill {
+            display: flex;
+            align-items: center;
+            background: #fff;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 100px;
+            padding: 6px 6px 6px 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            gap: 24px;
+            position: sticky;
+            top: 0;
+            margin-bottom: 40px;
+            z-index: 210;
+
+            /* Entry Animation */
+            transform: translateY(-50px);
+            opacity: 0;
+            transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition-delay: 0.1s;
+        }
+
+        .project-view.active .project-pill {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .pill-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* Vote Buttons */
+        .votes {
+            background: rgba(0, 0, 0, 0.05);
+            padding: 4px 4px;
+            border-radius: 100px;
+            gap: 0;
+        }
+
+        .vote-btn {
+            background: transparent;
+            border: none;
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            color: rgba(0, 0, 0, 0.5);
+            border-radius: 100px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .vote-btn:hover {
+            background: rgba(0, 0, 0, 0.05);
+            color: rgba(0, 0, 0, 0.9);
+        }
+
+        .votes .divider {
+            width: 1px;
+            height: 20px;
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        /* User Info Section */
+        .user .pill-avatar {
+            width: 36px;
+            height: 36px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            color: rgba(0, 0, 0, 0.4);
+        }
+
+        .pill-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .pill-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: rgba(0, 0, 0, 0.8);
+        }
+
+        .pill-time {
+            font-size: 11px;
+            color: rgba(0, 0, 0, 0.4);
+            font-weight: 600;
+        }
+
+        /* Large Thumbnail Placeholder */
+        .project-view-content {
+            width: 100%;
+            max-width: 1000px;
+            aspect-ratio: 16/9;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.03), rgba(0, 0, 0, 0.08));
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+
+            /* Entry Animation */
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.7s cubic-bezier(0.19, 1, 0.22, 1);
+            transition-delay: 0.2s;
+        }
+
+        .project-view.active .project-view-content {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* "Alive" Scanning Effect */
+        .project-view-content::before {
+            content: "";
+            position: absolute;
+            top: -100%;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.1), transparent);
+            animation: scan 4s linear infinite;
+        }
+
+        @keyframes scan {
+            0% {
+                top: -100%;
+            }
+
+            100% {
+                top: 100%;
+            }
+        }
+
+        .project-view-content::after {
+            content: "Project Interface Placeholder";
+            color: rgba(0, 0, 0, 0.2);
+            font-weight: 200;
+            font-size: 24px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            animation: breathe 3s ease-in-out infinite;
+        }
+
+        @keyframes breathe {
+
+            0%,
+            100% {
+                opacity: 0.5;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 1;
+                transform: scale(1.02);
+            }
+        }
+
+        /* Close Button */
+        .close-view {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .close-view:hover {
+            background: rgba(0, 0, 0, 0.1);
+            transform: rotate(90deg);
+        }
+
+        .close-view svg {
+            width: 20px;
+            height: 20px;
+            stroke: rgba(0, 0, 0, 0.5);
+            stroke-width: 2;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 50% 50%, var(--inner-light) 0%, var(--inner-base) 60%, var(--inner-dark) 100%);
+            z-index: 500;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.6s ease;
+        }
+
+        .loading-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Metal Spinner */
+        .metal-spinner {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            position: relative;
+            background: conic-gradient(from 0deg,
+                    #88898b 0%,
+                    #bdbebf 25%,
+                    #f2f2f2 50%,
+                    #bdbebf 75%,
+                    #88898b 100%);
+            box-shadow:
+                0 0 20px rgba(0, 0, 0, 0.2),
+                inset 0 0 10px rgba(0, 0, 0, 0.1);
+            animation: spin 1.5s linear infinite;
+            margin-bottom: 30px;
+        }
+
+        .metal-spinner::before {
+            content: "";
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            bottom: 15px;
+            background: radial-gradient(circle at 50% 50%, var(--inner-light) 0%, var(--inner-base) 100%);
+            border-radius: 50%;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-label {
+            font-size: 18px;
+            font-weight: 700;
+            color: rgba(0, 0, 0, 0.6);
+            text-align: center;
+            max-width: 400px;
+            min-height: 1.5em;
+            transition: opacity 0.4s ease;
+            letter-spacing: -0.01em;
+        }
+
+        /* Secret Orb System Easter Egg */
+        .orb-system {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            height: 300px;
+            display: none;
+            z-index: 550;
+            pointer-events: none;
+        }
+
+        .orb-system.active {
+            display: block;
+        }
+
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #fff 0%, #bdbebf 40%, #88898b 100%);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            top: 50%;
+            left: 50%;
+            margin: -15px 0 0 -15px;
+        }
+
+        .orb-large {
+            width: 30px;
+            height: 30px;
+            animation: orbitLarge 5s linear infinite;
+        }
+
+        .orb-small {
+            width: 15px;
+            height: 15px;
+            animation: orbitSmall 3s linear infinite;
+        }
+
+        .orb-tiny {
+            width: 10px;
+            height: 10px;
+            animation: orbitTiny 2s linear infinite;
+        }
+
+        @keyframes orbitLarge {
+            from {
+                transform: rotate(0deg) translateX(120px) rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg) translateX(120px) rotate(-360deg);
+            }
+        }
+
+        @keyframes orbitSmall {
+            from {
+                transform: rotate(0deg) translateX(60px) rotate(0deg);
+            }
+
+            to {
+                transform: rotate(-360deg) translateX(60px) rotate(360deg);
+            }
+        }
+
+        @keyframes orbitTiny {
+            from {
+                transform: rotate(0deg) translateX(30px) rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg) translateX(30px) rotate(-360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="aluminum-surface" id="outer-surface"></div>
+    <div class="noise-overlay"></div>
+    <div class="brushed-overlay"></div>
+
+    <main class="inner-panel" id="inner-surface">
+        <aside class="sidebar">
+            <div class="logo-container">
+                <div class="logo-text">B<span>r</span></div>
+            </div>
+
+            <div class="nav-items-top">
+                <div class="nav-item" title="Folder">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                </div>
+
+                <div class="nav-item" title="Heart">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z">
+                        </path>
+                    </svg>
+                </div>
+
+                <div class="nav-item" title="Clock">
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Bottom Drawer that expands separately -->
+            <div class="bottom-drawer" id="drawer">
+                <div class="chevron-toggle" id="toggle-drawer" title="Expand Details">
+                    <svg viewBox="0 0 24 24">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                </div>
+
+                <div class="drawer-content">
+                    <div class="model-selection" id="model-dropdown">
+                        <div class="dropdown-trigger" id="dropdown-trigger">
+                            <div class="selected-value">
+                                <svg class="model-logo" viewBox="0 0 24 24" fill="currentColor">
+                                    <path
+                                        d="M22.282 9.821a5.987 5.987 0 0 0-.516-4.91 6.046 6.046 0 0 0-6.51-2.9A6.065 6.065 0 0 0 4.981 4.18a5.987 5.987 0 0 0-3.998 2.9 6.046 6.046 0 0 0 .743 7.097 5.98 5.98 0 0 0 .51 4.911 6.051 6.051 0 0 0 6.515 2.9A5.985 5.985 0 0 0 13.26 24a6.056 6.056 0 0 0 5.772-4.206 5.99 5.99 0 0 0 3.997-2.9 6.056 6.056 0 0 0-.747-7.073zM13.26 22.43a4.476 4.476 0 0 1-2.876-1.04l.141-.081 4.779-2.758a.795.795 0 0 0 .392-.681v-6.737l2.02 1.168a.071.071 0 0 1 .038.052v5.583a4.504 4.504 0 0 1-4.494 4.494zM3.6 18.304a4.47 4.47 0 0 1-.535-3.014l.142.085 4.783 2.759a.771.771 0 0 0 .78 0l5.843-3.369v2.332a.08.08 0 0 1-.033.062L9.74 19.95a4.5 4.5 0 0 1-6.14-1.646zM2.34 7.896a4.485 4.485 0 0 1 2.366-1.973V11.6a.766.766 0 0 0 .388.676l5.815 3.355-2.02 1.168a.076.076 0 0 1-.071 0l-4.83-2.786A4.504 4.504 0 0 1 2.34 7.872zm16.597 3.855l-5.843-3.376L15.115 7.2a.076.076 0 0 1 .071 0l4.83 2.791a4.494 4.494 0 0 1-.676 8.105v-5.678a.79.79 0 0 0-.407-.667zm2.01-3.023l-.141-.085-4.774-2.782a.776.776 0 0 0-.785 0L9.409 9.23V6.897a.066.066 0 0 1 .028-.061l4.83-2.787a4.5 4.5 0 0 1 6.68 4.66zm-12.64 4.135l-2.02-1.164a.08.08 0 0 1-.038-.057V6.075a4.5 4.5 0 0 1 7.375-3.453l-.142.08L8.704 5.46a.795.795 0 0 0-.393.681zm1.097-2.365l2.602-1.5 2.607 1.5v2.999l-2.597 1.5-2.607-1.5z" />
+                                </svg>
+                                <span class="model-name">OpenAI Fast</span>
+                            </div>
+                            <svg class="dropdown-arrow" viewBox="0 0 24 24">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </div>
+                        <div class="dropdown-menu">
+                            <div class="model-option selected" data-model="openai-fast">
+                                <svg class="model-logo" viewBox="0 0 24 24" fill="currentColor">
+                                    <path
+                                        d="M22.282 9.821a5.987 5.987 0 0 0-.516-4.91 6.046 6.046 0 0 0-6.51-2.9A6.065 6.065 0 0 0 4.981 4.18a5.987 5.987 0 0 0-3.998 2.9 6.046 6.046 0 0 0 .743 7.097 5.98 5.98 0 0 0 .51 4.911 6.051 6.051 0 0 0 6.515 2.9A5.985 5.985 0 0 0 13.26 24a6.056 6.056 0 0 0 5.772-4.206 5.99 5.99 0 0 0 3.997-2.9 6.056 6.056 0 0 0-.747-7.073zM13.26 22.43a4.476 4.476 0 0 1-2.876-1.04l.141-.081 4.779-2.758a.795.795 0 0 0 .392-.681v-6.737l2.02 1.168a.071.071 0 0 1 .038.052v5.583a4.504 4.504 0 0 1-4.494 4.494zM3.6 18.304a4.47 4.47 0 0 1-.535-3.014l.142.085 4.783 2.759a.771.771 0 0 0 .78 0l5.843-3.369v2.332a.08.08 0 0 1-.033.062L9.74 19.95a4.5 4.5 0 0 1-6.14-1.646zM2.34 7.896a4.485 4.485 0 0 1 2.366-1.973V11.6a.766.766 0 0 0 .388.676l5.815 3.355-2.02 1.168a.076.076 0 0 1-.071 0l-4.83-2.786A4.504 4.504 0 0 1 2.34 7.872zm16.597 3.855l-5.843-3.376L15.115 7.2a.076.076 0 0 1 .071 0l4.83 2.791a4.494 4.494 0 0 1-.676 8.105v-5.678a.79.79 0 0 0-.407-.667zm2.01-3.023l-.141-.085-4.774-2.782a.776.776 0 0 0-.785 0L9.409 9.23V6.897a.066.066 0 0 1 .028-.061l4.83-2.787a4.5 4.5 0 0 1 6.68 4.66zm-12.64 4.135l-2.02-1.164a.08.08 0 0 1-.038-.057V6.075a4.5 4.5 0 0 1 7.375-3.453l-.142.08L8.704 5.46a.795.795 0 0 0-.393.681zm1.097-2.365l2.602-1.5 2.607 1.5v2.999l-2.597 1.5-2.607-1.5z" />
+                                </svg>
+                                <span class="model-name">OpenAI Fast</span>
+                            </div>
+                            <div class="model-option" data-model="claude-fast">
+                                <svg class="model-logo" viewBox="0 0 24 24" fill="currentColor">
+                                    <path
+                                        d="m4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z" />
+                                </svg>
+                                <span class="model-name">Claude Fast</span>
+                            </div>
+                            <div class="model-option" data-model="gemini">
+                                <svg class="model-logo" viewBox="0 0 24 24" fill="currentColor">
+                                    <path
+                                        d="M11.04 19.32Q12 21.51 12 24q0-2.49.93-4.68.96-2.19 2.58-3.81t3.81-2.55Q21.51 12 24 12q-2.49 0-4.68-.93a12.3 12.3 0 0 1-3.81-2.58 12.3 12.3 0 0 1-2.58-3.81Q12 2.49 12 0q0 2.49-.96 4.68-.93 2.19-2.55 3.81a12.3 12.3 0 0 1-3.81 2.58Q2.49 12 0 12q2.49 0 4.68.96 2.19.93 3.81 2.55t2.55 3.81" />
+                                </svg>
+                                <span class="model-name">Gemini</span>
+                            </div>
+                            <div class="model-option" data-model="perplexity-fast">
+                                <svg class="model-logo" viewBox="0 0 24 24" fill="currentColor">
+                                    <path
+                                        d="M22.3977 7.0896h-2.3106V.0676l-7.5094 6.3542V.1577h-1.1554v6.1966L4.4904 0v7.0896H1.6023v10.3976h2.8882V24l6.932-6.3591v6.2005h1.1554v-6.0469l6.9318 6.1807v-6.4879h2.8882V7.0896zm-3.4657-4.531v4.531h-5.355l5.355-4.531zm-13.2862.0676 4.8691 4.4634H5.6458V2.6262zM2.7576 16.332V8.245h7.8476l-6.1149 6.1147v1.9723H2.7576zm2.8882 5.0404v-3.8852h.0001v-2.6488l5.7763-5.7764v7.0111l-5.7764 5.2993zm12.7086.0248-5.7766-5.1509V9.0618l5.7766 5.7766v6.5588zm2.8882-5.0652h-1.733v-1.9723L13.3948 8.245h7.8478v8.087z" />
+                                </svg>
+                                <span class="model-name">Perplexity Fast</span>
+                            </div>
+                            <div class="model-option" data-model="mistral">
+                                <svg class="model-logo" viewBox="0 0 24 24" fill="currentColor">
+                                    <path
+                                        d="M0 2.667h5.333V8H0zm7.111 0h5.333V8H7.11zm7.111 0h5.333V8h-5.333zM0 8h5.333v5.333H0zM14.222 8h5.333v5.333h-5.333zm-7.11 5.333h5.333v5.334H7.11zm7.11 0h5.333v5.334h-5.333zM0 18.667h5.333V24H0zm14.222 0h5.333V24h-5.333z" />
+                                </svg>
+                                <span class="model-name">Mistral</span>
+                            </div>
+                            <div class="model-option" data-model="grok">
+                                <svg class="model-logo" viewBox="0 0 24 24" fill="currentColor">
+                                    <path
+                                        d="M14.234 10.162 22.977 0h-2.072l-7.591 8.824L7.251 0H.258l9.168 13.343L.258 24H2.33l8.016-9.318L16.749 24h6.993zm-2.837 3.299-.929-1.329L3.076 1.56h3.182l5.965 8.532.929 1.329 7.754 11.09h-3.182z" />
+                                </svg>
+                                <span class="model-name">Grok</span>
+                            </div>
+                        </div>
+                    </div>
+                    <textarea class="engraved-input" placeholder="Type here..."></textarea>
+                </div>
+            </div>
+        </aside>
+
+        <section class="main-content">
+            <div class="project-grid">
+                <!-- Card 1 -->
+                <div class="project-card">
+                    <div class="card-thumbnail"></div>
+                    <div class="card-details">
+                        <div class="card-avatar">C</div>
+                        <div class="card-info">
+                            <div class="project-title">Cybernetic Neural Link Integration</div>
+                            <div class="project-meta">AI Core &bull; 2h ago</div>
+                            <div class="card-actions">
+                                <div class="action-toggle">
+                                    <svg viewBox="0 0 24 24">
+                                        <circle cx="12" cy="12" r="1.5"></circle>
+                                        <circle cx="12" cy="5" r="1.5"></circle>
+                                        <circle cx="12" cy="19" r="1.5"></circle>
+                                    </svg>
+                                </div>
+                                <div class="card-menu">
+                                    <div class="menu-item">Open Project</div>
+                                    <div class="menu-item">Share</div>
+                                    <div class="menu-item" style="color: #ff4d4d;">Delete</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="project-card">
+                    <div class="card-thumbnail"></div>
+                    <div class="card-details">
+                        <div class="card-avatar">A</div>
+                        <div class="card-info">
+                            <div class="project-title">Atmospheric Scrubber Hardware Design</div>
+                            <div class="project-meta">Hardware &bull; 1d ago</div>
+                            <div class="card-actions">
+                                <div class="action-toggle">
+                                    <svg viewBox="0 0 24 24">
+                                        <circle cx="12" cy="12" r="1.5"></circle>
+                                        <circle cx="12" cy="5" r="1.5"></circle>
+                                        <circle cx="12" cy="19" r="1.5"></circle>
+                                    </svg>
+                                </div>
+                                <div class="card-menu">
+                                    <div class="menu-item">Open Project</div>
+                                    <div class="menu-item">Share</div>
+                                    <div class="menu-item" style="color: #ff4d4d;">Delete</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 3 -->
+                <div class="project-card">
+                    <div class="card-thumbnail"></div>
+                    <div class="card-details">
+                        <div class="card-avatar">Q</div>
+                        <div class="card-info">
+                            <div class="project-title">Quantum Fabric Simulation Engine</div>
+                            <div class="project-meta">Research &bull; 5h ago</div>
+                            <div class="card-actions">
+                                <div class="action-toggle">
+                                    <svg viewBox="0 0 24 24">
+                                        <circle cx="12" cy="12" r="1.5"></circle>
+                                        <circle cx="12" cy="5" r="1.5"></circle>
+                                        <circle cx="12" cy="19" r="1.5"></circle>
+                                    </svg>
+                                </div>
+                                <div class="card-menu">
+                                    <div class="menu-item">Open Project</div>
+                                    <div class="menu-item">Share</div>
+                                    <div class="menu-item" style="color: #ff4d4d;">Delete</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 4 -->
+                <div class="project-card">
+                    <div class="card-thumbnail"></div>
+                    <div class="card-details">
+                        <div class="card-avatar">B</div>
+                        <div class="card-info">
+                            <div class="project-title">BrushAI Framework Core Interface</div>
+                            <div class="project-meta">System &bull; 10m ago</div>
+                            <div class="card-actions">
+                                <div class="action-toggle">
+                                    <svg viewBox="0 0 24 24">
+                                        <circle cx="12" cy="12" r="1.5"></circle>
+                                        <circle cx="12" cy="5" r="1.5"></circle>
+                                        <circle cx="12" cy="19" r="1.5"></circle>
+                                    </svg>
+                                </div>
+                                <div class="card-menu">
+                                    <div class="menu-item">Open Project</div>
+                                    <div class="menu-item">Share</div>
+                                    <div class="menu-item" style="color: #ff4d4d;">Delete</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 5 -->
+                <div class="project-card">
+                    <div class="card-thumbnail"></div>
+                    <div class="card-details">
+                        <div class="card-avatar">N</div>
+                        <div class="card-info">
+                            <div class="project-title">Neural Mesh Network Topology</div>
+                            <div class="project-meta">Network &bull; 3d ago</div>
+                            <div class="card-actions">
+                                <div class="action-toggle">
+                                    <svg viewBox="0 0 24 24">
+                                        <circle cx="12" cy="12" r="1.5"></circle>
+                                        <circle cx="12" cy="5" r="1.5"></circle>
+                                        <circle cx="12" cy="19" r="1.5"></circle>
+                                    </svg>
+                                </div>
+                                <div class="card-menu">
+                                    <div class="menu-item">Open Project</div>
+                                    <div class="menu-item">Share</div>
+                                    <div class="menu-item" style="color: #ff4d4d;">Delete</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 6 -->
+                <div class="project-card">
+                    <div class="card-thumbnail"></div>
+                    <div class="card-details">
+                        <div class="card-avatar">D</div>
+                        <div class="card-info">
+                            <div class="project-title">Deep Sea Exploration Drone Logic</div>
+                            <div class="project-meta">Robotics &bull; 1w ago</div>
+                            <div class="card-actions">
+                                <div class="action-toggle">
+                                    <svg viewBox="0 0 24 24">
+                                        <circle cx="12" cy="12" r="1.5"></circle>
+                                        <circle cx="12" cy="5" r="1.5"></circle>
+                                        <circle cx="12" cy="19" r="1.5"></circle>
+                                    </svg>
+                                </div>
+                                <div class="card-menu">
+                                    <div class="menu-item">Open Project</div>
+                                    <div class="menu-item">Share</div>
+                                    <div class="menu-item" style="color: #ff4d4d;">Delete</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Project Detail View Overlay -->
+                <div class="project-view" id="project-detail-view">
+                    <div class="close-view" id="close-project-view">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                            stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </div>
+
+                    <div class="project-pill">
+                        <div class="pill-section votes">
+                            <button class="vote-btn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path
+                                        d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3">
+                                    </path>
+                                </svg>
+                                Like
+                            </button>
+                            <div class="divider"></div>
+                            <button class="vote-btn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path
+                                        d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3">
+                                    </path>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="pill-section user">
+                            <div class="pill-avatar" id="detail-avatar">?</div>
+                            <div class="pill-info">
+                                <div class="pill-name" id="detail-title">Project Name</div>
+                                <div class="pill-time" id="detail-meta">AI Core &bull; 2h ago</div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Metal Loading Overlay -->
+                <div class="loading-overlay" id="loading-overlay">
+                    <div class="metal-spinner" id="main-spinner"></div>
+
+                    <!-- Easter Egg Orbs -->
+                    <div class="orb-system" id="orb-system">
+                        <div class="orb orb-large"></div>
+                        <div class="orb orb-small"></div>
+                        <div class="orb orb-tiny"></div>
+                    </div>
+
+                    <div class="loading-label" id="loading-label">Hang Tight! Your dite is generating!</div>
+                </div>
+        </section>
+    </main>
+
+    <script>
+        // Interactive Lighting for both surfaces
+        const outer = document.getElementById('outer-surface');
+        const inner = document.getElementById('inner-surface');
+
+        document.addEventListener('mousemove', (e) => {
+            const x = (e.clientX / window.innerWidth) * 100;
+            const y = (e.clientY / window.innerHeight) * 100;
+
+            outer.style.background = `radial-gradient(circle at ${x}% ${y}%, var(--outer-light) 0%, var(--outer-base) 65%, var(--outer-dark) 100%)`;
+            inner.style.background = `radial-gradient(circle at ${x}% ${y}%, var(--inner-light) 0%, var(--inner-base) 65%, var(--inner-dark) 100%)`;
+        });
+
+        // Drawer Expansion Logic
+        const drawer = document.getElementById('drawer');
+        const toggleBtn = document.getElementById('toggle-drawer');
+
+        if (toggleBtn && drawer) {
+            toggleBtn.addEventListener('click', () => {
+                drawer.classList.toggle('expanded');
+            });
+        }
+
+        // Dropdown Logic
+        const dropdown = document.getElementById('model-dropdown');
+        const trigger = document.getElementById('dropdown-trigger');
+        const selectedValue = trigger.querySelector('.selected-value');
+        const options = document.querySelectorAll('.model-option');
+
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdown.classList.toggle('open');
+        });
+
+        options.forEach(option => {
+            option.addEventListener('click', (e) => {
+                e.stopPropagation();
+
+                // Update trigger content
+                selectedValue.innerHTML = option.innerHTML;
+
+                // Update selection classes
+                options.forEach(opt => opt.classList.remove('selected'));
+                option.classList.add('selected');
+
+                // Close dropdown
+                dropdown.classList.remove('open');
+
+                console.log(`Selected model: ${option.getAttribute('data-model')}`);
+            });
+        });
+
+        // Card Action Menu Logic
+        const actionToggles = document.querySelectorAll('.action-toggle');
+
+        actionToggles.forEach(toggle => {
+            toggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const parent = toggle.closest('.card-actions');
+
+                // Close other card menus
+                document.querySelectorAll('.card-actions').forEach(el => {
+                    if (el !== parent) el.classList.remove('open');
+                });
+
+                parent.classList.toggle('open');
+            });
+        });
+
+        // Close all dropdowns when clicking outside
+        document.addEventListener('click', () => {
+            dropdown.classList.remove('open');
+            document.querySelectorAll('.card-actions').forEach(el => el.classList.remove('open'));
+        });
+
+        // Project View Expansion Logic
+        const projectCards = document.querySelectorAll('.project-card');
+        const projectDetailView = document.getElementById('project-detail-view');
+        const closeProjectView = document.getElementById('close-project-view');
+
+        const detailTitle = document.getElementById('detail-title');
+        const detailMeta = document.getElementById('detail-meta');
+        const detailAvatar = document.getElementById('detail-avatar');
+
+        projectCards.forEach(card => {
+            card.addEventListener('click', (e) => {
+                // Ignore click if it's on the action toggle or menu
+                if (e.target.closest('.card-actions')) return;
+
+                const title = card.querySelector('.project-title').textContent;
+                const meta = card.querySelector('.project-meta').textContent;
+                const avatar = card.querySelector('.card-avatar').textContent;
+
+                // Populate and show detail view
+                detailTitle.textContent = title;
+                detailMeta.textContent = meta;
+                detailAvatar.textContent = avatar;
+
+                projectDetailView.classList.add('active');
+            });
+        });
+
+        closeProjectView.addEventListener('click', () => {
+            projectDetailView.classList.remove('active');
+        });
+
+        // Loading Trigger Logic
+        const promptInput = document.querySelector('.engraved-input');
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const loadingLabel = document.getElementById('loading-label');
+        const mainSpinner = document.getElementById('main-spinner');
+        const orbSystem = document.getElementById('orb-system');
+
+        let loadingInterval;
+        let lastPrompt = "";
+
+        const loadingTexts = [
+            "Hang Tight! Your dite is generating!",
+            "The Bits and Bytes are working",
+            "Cooking up 67 websites for you :mango:",
+            "When life gives you fun, have it -Two Scuffed",
+            "I know my site is metal - cry about it."
+        ];
+
+        // API Configuration
+        const POLLINATIONS_BASE_URL = 'https://gen.pollinations.ai';
+        // Note: The user will add the API key later in Netlify environment variables
+        // For a client-side app, this could be handled via a Netlify Function to keep the key secret.
+        const API_KEY = "";
+
+        async function fetchAIResponse(prompt, model) {
+            try {
+                const response = await fetch(`${POLLINATIONS_BASE_URL}/v1/chat/completions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(API_KEY && { 'Authorization': `Bearer ${API_KEY}` })
+                    },
+                    body: JSON.stringify({
+                        model: model,
+                        messages: [
+                            { role: 'system', content: 'You are a professional creative assistant for BrushAI, a premium design platform.' },
+                            { role: 'user', content: prompt }
+                        ],
+                        stream: false // Starting with non-streaming for simplicity, can be updated to streaming later
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                return data.choices[0].message.content;
+            } catch (error) {
+                console.error('Error fetching from Pollinations:', error);
+                return `Error: ${error.message}. Please check your API key and connection.`;
+            }
+        }
+
+        async function startLoading(prompt) {
+            lastPrompt = prompt;
+            loadingOverlay.classList.add('active');
+
+            // Get selected model
+            const selectedOption = document.querySelector('.model-option.selected');
+            const modelId = selectedOption ? selectedOption.getAttribute('data-model') : 'openai-fast';
+
+            // Randomly switch text during loading
+            loadingInterval = setInterval(() => {
+                loadingLabel.style.opacity = '0';
+                setTimeout(() => {
+                    const dynamicTexts = [...loadingTexts, `I know your next site is ${lastPrompt}`];
+                    const randomText = dynamicTexts[Math.floor(Math.random() * dynamicTexts.length)];
+                    loadingLabel.textContent = randomText;
+                    loadingLabel.style.opacity = '1';
+                }, 400);
+
+                if (Math.random() < 0.1) {
+                    mainSpinner.style.display = 'none';
+                    orbSystem.classList.add('active');
+                    setTimeout(() => {
+                        orbSystem.classList.remove('active');
+                        mainSpinner.style.display = 'block';
+                    }, 5000);
+                }
+            }, 5000);
+
+            // Fetch actual response
+            const aiResponse = await fetchAIResponse(prompt, modelId);
+
+            // Cleanup loading
+            clearInterval(loadingInterval);
+            loadingOverlay.classList.remove('active');
+
+            // Display in project detail view
+            showProjectDetail(prompt, aiResponse);
+        }
+
+        function showProjectDetail(title, content) {
+            detailTitle.textContent = title;
+            detailMeta.textContent = "Generated by AI &bull; Just now";
+            detailAvatar.textContent = title.charAt(0).toUpperCase();
+
+            // Update content area
+            const contentArea = document.querySelector('.project-view-content');
+
+            // Create a styled response container if it doesn't exist
+            let responseContainer = document.getElementById('ai-response-display');
+            if (!responseContainer) {
+                responseContainer = document.createElement('div');
+                responseContainer.id = 'ai-response-display';
+                responseContainer.style.cssText = `
+                    padding: 40px;
+                    color: rgba(0,0,0,0.8);
+                    font-size: 16px;
+                    line-height: 1.6;
+                    max-width: 800px;
+                    width: 100%;
+                    overflow-y: auto;
+                    height: 100%;
+                    background: rgba(255,255,255,0.5);
+                    backdrop-filter: blur(10px);
+                    border-radius: 12px;
+                    z-index: 10;
+                `;
+                contentArea.appendChild(responseContainer);
+            }
+
+            responseContainer.innerHTML = `<div style="white-space: pre-wrap;">${content}</div>`;
+
+            // Hide the placeholder text (the ::after pseudo-element is harder to hide, so we just stack on top)
+            contentArea.classList.add('has-content');
+
+            projectDetailView.classList.add('active');
+        }
+
+        promptInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                const prompt = promptInput.value.trim();
+                if (prompt) {
+                    startLoading(prompt);
+                    promptInput.value = ""; // Clear input
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>
