@@ -605,6 +605,64 @@
             transform: rotate(90deg) scale(1.1);
         }
 
+        /* History Sidebar */
+        .history-sidebar {
+            width: 280px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow-y: auto;
+            padding-right: 10px;
+            scrollbar-width: none;
+            /* Hide scrollbar Firefox */
+        }
+
+        .history-sidebar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .history-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 15px 20px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 13px;
+            line-height: 1.5;
+            transition: all 0.3s ease;
+            cursor: default;
+            animation: slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .history-item span {
+            display: block;
+            color: #fff;
+            font-weight: 700;
+            margin-bottom: 4px;
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            opacity: 0.8;
+        }
+
+        .history-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateX(-5px);
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
         @keyframes spin {
             to {
                 transform: rotate(360deg);
@@ -716,6 +774,9 @@
                 </header>
 
                 <main class="workspace">
+                    <aside class="history-sidebar" id="history-sidebar">
+                        <!-- History items injected here -->
+                    </aside>
                     <div class="preview-container">
                         <div class="preview-header">
                             <div class="dot" style="background: #ff5f56;"></div>
@@ -783,6 +844,22 @@
         const dockPromptInput = document.getElementById('dock-prompt-input');
         const editorDock = document.getElementById('editor-dock');
         const homePromptInput = document.querySelector('.engraved-input');
+        const historySidebar = document.getElementById('history-sidebar');
+
+        let promptHistory = [];
+
+        function renderHistory() {
+            if (!historySidebar) return;
+            historySidebar.innerHTML = '';
+            promptHistory.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'history-item';
+                div.innerHTML = `<span>Version ${index + 1}</span>${item}`;
+                historySidebar.appendChild(div);
+            });
+            // Auto-scroll to bottom
+            historySidebar.scrollTop = historySidebar.scrollHeight;
+        }
 
         async function fetchAIResponse(prompt, model) {
             try {
@@ -803,6 +880,11 @@
         async function updateWebsite(prompt) {
             if (!prompt) return;
             editorDock.classList.add('loading');
+
+            // Log history
+            promptHistory.push(prompt);
+            renderHistory();
+
             const modelId = 'openai-fast';
             const aiResponse = await fetchAIResponse(prompt, modelId);
             const doc = websitePreview.contentDocument || websitePreview.contentWindow.document;
@@ -813,6 +895,11 @@
         function startEditorMode(initialPrompt) {
             document.getElementById('detail-title').textContent = initialPrompt;
             projectDetailView.classList.add('active');
+
+            // Start fresh history
+            promptHistory = [];
+            renderHistory();
+
             if (initialPrompt) { updateWebsite(initialPrompt); dockPromptInput.value = initialPrompt; }
         }
 
