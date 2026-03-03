@@ -1448,39 +1448,25 @@
             "I know my site is metal - cry about it."
         ];
 
-        // API Configuration
-        const POLLINATIONS_BASE_URL = 'https://gen.pollinations.ai';
-        // Note: The user will add the API key later in Netlify environment variables
-        // For a client-side app, this could be handled via a Netlify Function to keep the key secret.
-        const API_KEY = "";
-
         async function fetchAIResponse(prompt, model) {
             try {
-                const response = await fetch(`${POLLINATIONS_BASE_URL}/v1/chat/completions`, {
+                const response = await fetch('/.netlify/functions/chat', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        ...(API_KEY && { 'Authorization': `Bearer ${API_KEY}` })
+                        'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        model: model,
-                        messages: [
-                            { role: 'system', content: 'You are a professional creative assistant for BrushAI, a premium design platform.' },
-                            { role: 'user', content: prompt }
-                        ],
-                        stream: false // Starting with non-streaming for simplicity, can be updated to streaming later
-                    })
+                    body: JSON.stringify({ prompt, model })
                 });
 
                 if (!response.ok) {
-                    throw new Error(`API error: ${response.status}`);
+                    throw new Error(`Server error: ${response.status}`);
                 }
 
                 const data = await response.json();
                 return data.choices[0].message.content;
             } catch (error) {
-                console.error('Error fetching from Pollinations:', error);
-                return `Error: ${error.message}. Please check your API key and connection.`;
+                console.error('Error fetching from Netlify Function:', error);
+                return `Error: ${error.message}. Please check your Netlify logs and configuration.`;
             }
         }
 
