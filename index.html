@@ -1892,7 +1892,6 @@
 
         async function streamAIResponse(messages, model, callback) {
             console.log('!!! streamAIResponse ENTERED !!!');
-            // Force a console message to verify logging is working
             console.info('%c SYNTHESIS LOGGING ACTIVE ', 'background: #2196F3; color: white; font-weight: bold;');
             
             const doc = websitePreview.contentDocument || websitePreview.contentWindow.document;
@@ -1902,6 +1901,7 @@
                     <div id="loading-container" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; background:#f9f9f9; font-family:sans-serif; color:#333;">
                         <div style="border: 4px solid #f3f3f3; border-top: 4px solid #2196F3; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
                         <div style="font-weight:600;">Synthesis starting...</div>
+                        <div id="progress-log" style="margin-top:10px; font-size:12px; color:#666;">Waiting for data...</div>
                         <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
                     </div>
                 `);
@@ -1920,6 +1920,8 @@
                 });
 
                 console.log('!!! FETCH STATUS !!!', response.status, response.ok);
+                const progressEl = doc.getElementById('progress-log');
+                if (progressEl) progressEl.textContent = `Connected (Status ${response.status})...`;
 
                 if (!response.ok) {
                     const err = await response.text();
@@ -1940,6 +1942,7 @@
                     }
 
                     const chunk = decoder.decode(value, { stream: true });
+                    console.log('!!! RAW CHUNK !!!', chunk);
                     streamBuffer += chunk;
                     
                     const lines = streamBuffer.split('\n');
@@ -1961,9 +1964,8 @@
 
                         try {
                             const json = JSON.parse(data);
-                            console.log('!!! RAW JSON CHUNK !!!', json);
+                            console.log('!!! JSON DATA !!!', json);
                             
-                            // Universal content extraction
                             let text = "";
                             if (json.choices?.[0]?.delta?.content) text = json.choices[0].delta.content;
                             else if (json.choices?.[0]?.text) text = json.choices[0].text;
@@ -1973,8 +1975,8 @@
                             
                             if (text) {
                                 fullContent += text;
+                                if (progressEl) progressEl.textContent = `Receiving data (${fullContent.length} bytes)...`;
                                 if (callback) {
-                                    console.log('!!! CALLING CALLBACK WITH TEXT !!!', text.substring(0, 20));
                                     callback(fullContent, text);
                                 }
                             }
@@ -1986,6 +1988,7 @@
                 return fullContent;
             } catch (error) {
                 console.error('!!! STREAM FATAL ERROR !!!', error);
+                if (progressEl) progressEl.textContent = `Error: ${error.message}`;
                 throw error;
             }
         }
