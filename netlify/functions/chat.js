@@ -1,9 +1,8 @@
 const { stream } = require("@netlify/functions");
 
-exports.handler = stream(async (event, context) => {
-    console.log('Context keys:', Object.keys(context || {}));
-    const { stream: netlifyStream } = context || {};
-    console.log('Netlify stream available:', !!netlifyStream);
+exports.handler = stream(async (event, stream) => {
+    console.log('Stream type:', typeof stream);
+    console.log('Stream methods:', Object.getOwnPropertyNames(stream || {}));
     console.log('Chat function invoked');
     console.log('Event:', JSON.stringify(event, null, 2));
     
@@ -74,7 +73,7 @@ exports.handler = stream(async (event, context) => {
             const { done, value } = await reader.read();
             if (done) break;
             // Write chunks to the Netlify stream immediately to prevent inactivity timeout
-            netlifyStream.write(value);
+            stream.write(value);
         }
 
         return;
