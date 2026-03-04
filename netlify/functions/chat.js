@@ -65,8 +65,34 @@ exports.handler = stream(async (event, context) => {
             return { statusCode: response.status, body: errorMsg };
         }
 
-        // Return the readable stream directly for Netlify to handle
-        return response.body;
+        // Manually handle SSE streaming to ensure proper format
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+
+            for (const line of lines) {
+                const trimmed = line.trim();
+                if (trimmed) {
+                    // Write each line to the Netlify stream
+                    context.write(trimmed + '\n');
+                }
+            }
+        }
+
+        // Write any remaining buffer content
+        if (buffer.trim()) {
+            context.write(buffer);
+        }
+
+        return;
     } catch (error) {
         console.error('Synthesis Conduit Fault:', error);
         console.error('Error stack:', error.stack);
