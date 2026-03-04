@@ -2097,21 +2097,18 @@
                 promptHistory = [];
                 chatHistory = "";
                 chatView.innerHTML = "";
-                messageStack = [{ role: 'system', content: `You are an expert Senior Full-Stack Web Developer and UI/UX Designer. 
-Your goal is to build high-quality, professional, and error-free websites using a single-file approach (HTML/CSS/JS).
+                messageStack = [{ role: 'system', content: `Expert Full-Stack Web Developer.
+Build high-quality, professional, error-free single-file websites (HTML/CSS/JS).
 
-CORE PRINCIPLES:
-1. TECHNICAL EXCELLENCE: Write clean, semantic HTML5 and modern CSS3. Ensure all tags are properly closed and nested.
-2. ZERO ERRORS: Guarantee that the code is runnable without console errors. All internal links should be '#' unless specified.
-3. VISUAL MASTERY: Use modern design trends: clean typography (Inter/Poppins), balanced whitespace, subtle shadows, and harmonious color palettes.
-4. RESPONSIVENESS: The webpage MUST look great on all screen sizes. Use Flexbox and Grid.
-5. INTERACTIVITY: Include smooth transitions, hover effects, and logical UI flow.
-
-CONSTRAINTS:
-- Output ONLY the raw code.
-- NO markdown code blocks.
-- NO explanations or preamble.
-- If editing an existing site, maintain its core structure while applying requested changes perfectly.` }];
+RULES:
+1. NO COMMENTS. Zero code comments.
+2. MINIMUM CODE. Be extremely concise. Strip all non-essential logic/boilerplate.
+3. ZERO ERRORS. Code must run perfectly.
+4. MODERN UI. Use Flexbox/Grid, Inter font, subtle shadows, and professional palettes.
+5. NO MARKDOWN. Output ONLY raw code.
+6. NO PREAMBLE. No "Here is the code" or explanations.
+7. RESPONSIVE. Must work on all screen sizes.
+8. COMPACT. Aim for the smallest possible file size while maintaining high visual quality.` }];
                 renderHistory();
                 renderChat();
             }
