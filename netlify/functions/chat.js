@@ -1,6 +1,9 @@
-exports.handler = async (event) => {
+const { stream } = require("@netlify/functions");
+
+exports.handler = stream(async (event, context) => {
+    console.log('Chat function invoked with streaming');
     console.log('Event:', JSON.stringify(event, null, 2));
-    
+
     try {
         if (!event.body) {
             console.error('No request body provided');
@@ -9,11 +12,11 @@ exports.handler = async (event) => {
 
         const { messages, model, stream: shouldStream } = JSON.parse(event.body);
         console.log('Parsed request:', { messages: messages?.length, model, shouldStream });
-        
+
         const isOpenRouter = model && model.startsWith('google/');
         const API_KEY = process.env.POLLINATIONS_API_KEY;
         const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
-        
+
         console.log('Environment variables check:', {
             hasPollinationsKey: !!API_KEY,
             hasOpenRouterKey: !!OPENROUTER_API_KEY,
@@ -62,30 +65,18 @@ exports.handler = async (event) => {
             return { statusCode: response.status, body: errorMsg };
         }
 
-        // Convert the stream to text and return
-        const responseText = await response.text();
-        return {
-            statusCode: 200,
-            headers: {
-                'Content-Type': 'text/plain; charset=utf-8',
-                'Cache-Control': 'no-cache',
-                'Connection': 'keep-alive',
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Headers': 'Content-Type',
-                'Access-Control-Allow-Methods': 'POST, OPTIONS'
-            },
-            body: responseText
-        };
+        // Return the readable stream directly for Netlify to handle
+        return response.body;
     } catch (error) {
         console.error('Synthesis Conduit Fault:', error);
         console.error('Error stack:', error.stack);
-        return { 
-            statusCode: 500, 
-            body: JSON.stringify({ 
+        return {
+            statusCode: 500,
+            body: JSON.stringify({
                 error: 'Internal Synthesis Fault',
                 message: error.message,
-                stack: error.stack 
+                stack: error.stack
             })
         };
     }
-};
+});
