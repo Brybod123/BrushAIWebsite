@@ -39,7 +39,7 @@ exports.handler = stream(async (event) => {
         console.log('Making request to:', endpoint);
 
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 55000); // 55 second timeout (Netlify max is 60s)
 
         const response = await fetch(endpoint, {
             method: 'POST',
