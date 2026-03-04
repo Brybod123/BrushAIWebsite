@@ -849,9 +849,9 @@
 
         /* User Projects Drawer - Styled like Bottom Drawer */
         .user-projects-drawer {
-            position: absolute;
-            top: 155px; /* Positioned near folder icon */
-            left: 70px; /* Shifted right to clear sidebar */
+            position: fixed; /* Changed to fixed to avoid parent clipping */
+            top: 155px; 
+            left: 80px; /* Offset from sidebar */
             width: 0;
             height: 0;
             background: radial-gradient(circle at 0% 50%, var(--inner-light) 0%, var(--inner-base) 100%);
@@ -861,19 +861,20 @@
             transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             flex-direction: column;
-            z-index: 1000;
+            z-index: 10001; /* Ensure it's above everything */
             overflow: hidden;
             opacity: 0;
             pointer-events: none;
+            transform-origin: left center; /* Explicitly expand from left */
         }
 
         .user-projects-drawer.expanded {
-            width: 400px;
-            height: 400px;
+            width: 420px;
+            height: 420px;
             opacity: 1;
             pointer-events: auto;
             padding: 20px;
-            overflow: visible;
+            overflow: visible; /* Allow content to be visible */
         }
 
         .user-projects-drawer .drawer-header {
