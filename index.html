@@ -858,35 +858,34 @@
             });
         });
 
-        async function fetchAIResponse(prompt, model) {
+        async function fetchAIResponse(prompt, model, retries = 1) {
             try {
-                // Switching to direct client-side fetch to avoid Netlify's 10s timeout
-                const response = await fetch('https://gen.pollinations.ai/v1/chat/completions', {
+                // Routing back through Netlify Proxy to use secure API keys
+                const response = await fetch('/.netlify/functions/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        model: model || 'openai-fast',
-                        messages: [
-                            { role: 'system', content: 'You are a professional creative assistant for BrushAI. Generate high-quality, modern, responsive HTML/CSS code only. No markdown, no explanations. Just raw code.' },
-                            { role: 'user', content: prompt }
-                        ],
-                        stream: false
-                    })
+                    body: JSON.stringify({ prompt, model })
                 });
 
                 if (!response.ok) {
-                    const errorMsg = await response.text();
-                    throw new Error(`Synthesis error: ${response.status} - ${errorMsg}`);
+                    if (response.status >= 500 && retries > 0) {
+                        console.warn('Synthesis delayed - Engaging Stabilizers');
+                        return fetchAIResponse(prompt, model, retries - 1);
+                    }
+                    throw new Error(`Synthesis error: ${response.status}`);
                 }
                 const data = await response.json();
                 return data.choices[0].message.content;
             } catch (error) {
                 console.error('Synthesis Fault:', error);
+                const errorType = error.message.includes('502') || error.message.includes('504') ? 'Timeout' : 'Failure';
                 return `<div style="background:#0a0a0b; color:#ff4d4d; padding:40px; font-family:sans-serif; height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
                             <h1 style="font-size:64px; margin-bottom:10px;">X</h1>
-                            <h2 style="font-size:24px; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:10px;">Synthesis Failed</h2>
-                            <p style="opacity:0.6; max-width:400px; margin-top:10px; font-size:14px;">${error.message}</p>
-                            <button onclick="location.reload()" style="margin-top:30px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#fff; padding:10px 20px; border-radius:20px; cursor:pointer;">Retry System</button>
+                            <h2 style="font-size:24px; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:10px;">Synthesis ${errorType}</h2>
+                            <p style="opacity:0.6; max-width:400px; margin-top:10px; font-size:14px;">The AI core lost sync. This usually happens with massive prompts that exceed the 10s synthesis limit.</p>
+                            <div style="margin-top:30px; display:flex; gap:10px;">
+                                <button onclick="location.reload()" style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#fff; padding:10px 20px; border-radius:20px; cursor:pointer;">Cold Boot</button>
+                            </div>
                         </div>`;
             }
         }
