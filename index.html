@@ -847,63 +847,73 @@
             transform: scale(1.1);
         }
 
-        /* User Projects Drawer */
+        /* User Projects Drawer - Original Circular Style */
         .user-projects-drawer {
-            position: fixed;
-            bottom: -100%;
-            left: 0;
-            right: 0;
-            width: 100%;
-            max-width: 500px;
-            margin: 0 auto;
-            background: rgba(30, 30, 32, 0.98);
-            backdrop-filter: blur(20px);
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px 20px 0 0;
-            transform: translateY(100%);
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 10000;
-            max-height: 70vh;
-            overflow-y: auto;
+            position: absolute;
+            top: 80px;
+            right: 80px;
+            width: 60px;
+            height: 60px;
+            background: rgba(30, 30, 32, 0.9);
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            z-index: 1000;
         }
 
-        .user-projects-drawer.open {
-            transform: translateY(0);
+        .user-projects-drawer.expanded {
+            width: 400px;
+            height: 300px;
+            border-radius: 25px;
         }
 
-        .drawer-header {
+        .user-projects-drawer .drawer-header {
+            display: none;
+        }
+
+        .user-projects-drawer.expanded .drawer-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 20px;
+            padding: 15px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .close-drawer-btn {
-            background: none;
-            border: none;
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 24px;
+        .user-projects-drawer .drawer-content {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            padding: 0;
+            pointer-events: none;
+            max-height: none;
+        }
+
+        .user-projects-drawer.expanded .drawer-content {
+            opacity: 1;
+            pointer-events: auto;
+            padding: 15px;
+        }
+
+        .user-projects-drawer .chevron-toggle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 24px;
+            height: 24px;
             cursor: pointer;
-            padding: 5px;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
+            z-index: 10;
+            transition: transform 0.3s ease;
         }
 
-        .close-drawer-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
+        .user-projects-drawer.expanded .chevron-toggle {
+            transform: translate(-50%, -50%) rotate(180deg);
         }
 
-        .drawer-content {
-            padding: 0 20px 20px;
-            max-height: 50vh;
-            overflow-y: auto;
+        .user-projects-drawer .chevron-toggle svg {
+            width: 100%;
+            height: 100%;
+            fill: rgba(255, 255, 255, 0.7);
         }
 
         .bottom-drawer-toggle {
@@ -1275,31 +1285,27 @@
                 document.getElementById('viewer-title-display').textContent = project.title;
             };
 
-            // Drawer functions
-        let isDrawerOpen = false;
-
+            // Drawer functions - using original expand/collapse style
         function toggleUserProjectsDrawer() {
             const drawer = document.getElementById('user-projects-drawer');
-            const toggle = document.getElementById('bottom-drawer-toggle');
             
-            isDrawerOpen = !isDrawerOpen;
-            
-            if (isDrawerOpen) {
-                drawer.classList.add('open');
-                toggle.style.display = 'none';
+            if (drawer.classList.contains('expanded')) {
+                drawer.classList.remove('expanded');
+            } else {
+                drawer.classList.add('expanded');
                 
-                // Load user projects when opening
+                // Load user projects when expanding
                 if (window.currentUser) {
                     window.loadUserProjects().then(projects => {
                         const content = document.getElementById('user-projects-content');
                         if (projects.length > 0) {
                             content.innerHTML = projects.map((project, index) => `
-                                <div class="drawer-project-item" onclick="window.resumeProject(${JSON.stringify(project).replace(/"/g, '&quot;')})" style="cursor: pointer; padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); transition: all 0.2s;">
-                                    <div style="display: flex; align-items: center; gap: 12px;">
-                                        ${project.thumbnail ? `<img src="${project.thumbnail}" style="width: 40px; height: 40px; border-radius: 8px; object-fit: cover;">` : `<div style="width: 40px; height: 40px; border-radius: 8px; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; font-weight: 600;">${project.title[0]?.toUpperCase() || 'P'}</div>`}
+                                <div class="drawer-project-item" onclick="window.resumeProject(${JSON.stringify(project).replace(/"/g, '&quot;')})" style="cursor: pointer; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); transition: all 0.2s;">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        ${project.thumbnail ? `<img src="${project.thumbnail}" style="width: 35px; height: 35px; border-radius: 6px; object-fit: cover;">` : `<div style="width: 35px; height: 35px; border-radius: 6px; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; font-weight: 600;">${project.title[0]?.toUpperCase() || 'P'}</div>`}
                                         <div style="flex: 1; min-width: 0;">
-                                            <div style="color: #fff; font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${project.title}</div>
-                                            <div style="color: rgba(255,255,255,0.6); font-size: 10px; margin-top: 3px;">${new Date(project.lastModified).toLocaleDateString()} ${project.isDraft ? '(Draft)' : ''}</div>
+                                            <div style="color: #fff; font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${project.title}</div>
+                                            <div style="color: rgba(255,255,255,0.6); font-size: 9px; margin-top: 2px;">${new Date(project.lastModified).toLocaleDateString()} ${project.isDraft ? '(Draft)' : ''}</div>
                                         </div>
                                     </div>
                                 </div>
@@ -1315,13 +1321,10 @@
                                 });
                             });
                         } else {
-                            content.innerHTML = '<div style="padding: 40px; text-align: center; color: rgba(255,255,255,0.6); font-size: 13px;">No saved projects yet. Press Ctrl+S to save your work.</div>';
+                            content.innerHTML = '<div style="padding: 30px; text-align: center; color: rgba(255,255,255,0.6); font-size: 12px;">No saved projects yet. Press Ctrl+S to save your work.</div>';
                         }
                     });
                 }
-            } else {
-                drawer.classList.remove('open');
-                toggle.style.display = 'flex';
             }
         }
 
@@ -1333,9 +1336,18 @@
             });
         }
 
-        // Show bottom drawer toggle only for authenticated users
-        if (window.currentUser) {
-            document.getElementById('bottom-drawer-toggle').style.display = 'flex';
+        // Chevron toggle click handler
+        const userProjectsToggle = document.getElementById('user-projects-toggle');
+        if (userProjectsToggle) {
+            userProjectsToggle.addEventListener('click', () => {
+                toggleUserProjectsDrawer();
+            });
+        }
+
+        // Remove bottom drawer toggle since we're using the circular style
+        const bottomDrawerToggle = document.getElementById('bottom-drawer-toggle');
+        if (bottomDrawerToggle) {
+            bottomDrawerToggle.style.display = 'none';
         }
         }
 
@@ -1350,8 +1362,13 @@
             
             <!-- User Projects Drawer -->
         <div class="user-projects-drawer" id="user-projects-drawer">
+            <div class="chevron-toggle" id="user-projects-toggle" title="My Projects">
+                <svg viewBox="0 0 24 24">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </div>
             <div class="drawer-header">
-                <div style="color: #fff; font-size: 14px; font-weight: 600; margin-bottom: 15px;">My Projects</div>
+                <div style="color: #fff; font-size: 14px; font-weight: 600;">My Projects</div>
                 <button class="close-drawer-btn" onclick="toggleUserProjectsDrawer()">×</button>
             </div>
             <div class="drawer-content" id="user-projects-content">
