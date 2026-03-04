@@ -1,9 +1,6 @@
-const { stream } = require("@netlify/functions");
+const { createResponse } = require("@netlify/functions");
 
-exports.handler = stream(async (event, stream) => {
-    console.log('Stream type:', typeof stream);
-    console.log('Stream methods:', Object.getOwnPropertyNames(stream || {}));
-    console.log('Chat function invoked');
+exports.handler = async (event) => {
     console.log('Event:', JSON.stringify(event, null, 2));
     
     try {
@@ -67,8 +64,19 @@ exports.handler = stream(async (event, stream) => {
             return { statusCode: response.status, body: errorMsg };
         }
 
-        // Pipe the response body directly to the Netlify stream
-        return response.body;
+        // Return the response body stream directly for Netlify to handle
+        return {
+            statusCode: 200,
+            headers: {
+                'Content-Type': 'text/plain; charset=utf-8',
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Headers': 'Content-Type',
+                'Access-Control-Allow-Methods': 'POST, OPTIONS'
+            },
+            body: response.body
+        };
     } catch (error) {
         console.error('Synthesis Conduit Fault:', error);
         console.error('Error stack:', error.stack);
