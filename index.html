@@ -1712,33 +1712,63 @@
             try {
                 // Take Screenshot of the actual website content
                 console.log('Taking screenshot of website content...');
+                console.log('iframe srcdoc length:', websitePreview.srcdoc?.length || 'null');
+                console.log('iframe dimensions:', websitePreview.offsetWidth, 'x', websitePreview.offsetHeight);
                 
-                // Wait a bit for content to render
-                await new Promise(resolve => setTimeout(resolve, 500));
+                // Wait longer for content to fully render
+                await new Promise(resolve => setTimeout(resolve, 2000));
                 
-                // Create a temporary div with the iframe content for screenshot
-                const tempDiv = document.createElement('div');
-                tempDiv.style.position = 'absolute';
-                tempDiv.style.left = '-9999px';
-                tempDiv.style.top = '-9999px';
-                tempDiv.style.width = websitePreview.offsetWidth + 'px';
-                tempDiv.style.height = websitePreview.offsetHeight + 'px';
-                tempDiv.innerHTML = websitePreview.srcdoc;
-                document.body.appendChild(tempDiv);
+                // Try multiple approaches
+                let canvas;
                 
-                // Screenshot the temporary div
-                const canvas = await html2canvas(tempDiv, {
-                    useCORS: true,
-                    backgroundColor: '#ffffff',
-                    scale: 0.5,
-                    width: websitePreview.offsetWidth,
-                    height: websitePreview.offsetHeight
-                });
+                // Approach 1: Try to get iframe document directly
+                try {
+                    const iframeDoc = websitePreview.contentDocument || websitePreview.contentWindow?.document;
+                    if (iframeDoc && iframeDoc.body) {
+                        console.log('Using iframe document for screenshot');
+                        canvas = await html2canvas(iframeDoc.body, {
+                            useCORS: true,
+                            backgroundColor: '#ffffff',
+                            scale: 0.5,
+                            width: websitePreview.offsetWidth,
+                            height: websitePreview.offsetHeight
+                        });
+                    }
+                } catch (e) {
+                    console.log('Iframe approach failed:', e.message);
+                }
                 
-                // Remove temporary div
-                document.body.removeChild(tempDiv);
+                // Approach 2: Fallback to srcdoc in temp div
+                if (!canvas) {
+                    console.log('Using srcdoc fallback approach');
+                    const tempDiv = document.createElement('div');
+                    tempDiv.style.position = 'absolute';
+                    tempDiv.style.left = '-9999px';
+                    tempDiv.style.top = '-9999px';
+                    tempDiv.style.width = websitePreview.offsetWidth + 'px';
+                    tempDiv.style.height = websitePreview.offsetHeight + 'px';
+                    tempDiv.style.backgroundColor = '#ffffff';
+                    tempDiv.innerHTML = websitePreview.srcdoc || '<div style="color:red;">No content found</div>';
+                    document.body.appendChild(tempDiv);
+                    
+                    canvas = await html2canvas(tempDiv, {
+                        useCORS: true,
+                        backgroundColor: '#ffffff',
+                        scale: 0.5,
+                        width: websitePreview.offsetWidth,
+                        height: websitePreview.offsetHeight
+                    });
+                    
+                    document.body.removeChild(tempDiv);
+                }
+                
+                if (!canvas) {
+                    throw new Error('Failed to generate screenshot');
+                }
                 
                 console.log('Screenshot canvas dimensions:', canvas.width, 'x', canvas.height);
+                console.log('Canvas data length:', canvas.toDataURL('image/webp', 0.5).length);
+                
                 const thumbnail = canvas.toDataURL('image/webp', 0.5);
                 console.log('Thumbnail generated, length:', thumbnail.length);
 
