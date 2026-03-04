@@ -1,5 +1,3 @@
-const { createResponse } = require("@netlify/functions");
-
 exports.handler = async (event) => {
     console.log('Event:', JSON.stringify(event, null, 2));
     
@@ -38,7 +36,7 @@ exports.handler = async (event) => {
         console.log('Making request to:', endpoint);
 
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 55000); // 55 second timeout (Netlify max is 60s)
+        const timeoutId = setTimeout(() => controller.abort(), 55000);
 
         const response = await fetch(endpoint, {
             method: 'POST',
@@ -64,7 +62,8 @@ exports.handler = async (event) => {
             return { statusCode: response.status, body: errorMsg };
         }
 
-        // Return the response body stream directly for Netlify to handle
+        // Convert the stream to text and return
+        const responseText = await response.text();
         return {
             statusCode: 200,
             headers: {
@@ -75,7 +74,7 @@ exports.handler = async (event) => {
                 'Access-Control-Allow-Headers': 'Content-Type',
                 'Access-Control-Allow-Methods': 'POST, OPTIONS'
             },
-            body: response.body
+            body: responseText
         };
     } catch (error) {
         console.error('Synthesis Conduit Fault:', error);
@@ -89,4 +88,4 @@ exports.handler = async (event) => {
             })
         };
     }
-});
+};
