@@ -851,7 +851,7 @@
         .user-projects-drawer {
             position: fixed;
             top: 155px; 
-            right: 80px; /* Offset from right sidebar */
+            right: 130px; /* Offset from right sidebar to avoid overlap */
             width: 0;
             height: 0;
             background: radial-gradient(circle at 100% 50%, var(--inner-light) 0%, var(--inner-base) 100%);
@@ -878,32 +878,67 @@
         }
 
         .user-projects-drawer .drawer-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 0 12px 0;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-            margin-bottom: 15px;
-            opacity: 0;
-            transition: opacity 0.3s ease 0.2s;
-        }
-
-        .user-projects-drawer.expanded .drawer-header {
-            opacity: 1;
+            display: none; /* Removed top bar as requested */
         }
 
         .user-projects-drawer .drawer-content {
             opacity: 0;
-            transition: opacity 0.3s ease 0.3s;
+            transition: opacity 0.3s ease;
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 12px;
             pointer-events: none;
             overflow-y: auto;
-            max-height: 320px;
+            max-height: 100%; /* Take full height since header is gone */
         }
 
         .user-projects-drawer.expanded .drawer-content {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Liked Projects Drawer */
+        .liked-projects-drawer {
+            position: fixed;
+            top: 215px; /* Aligned with heart icon */
+            right: 130px;
+            width: 0;
+            height: 0;
+            background: radial-gradient(circle at 100% 50%, #fff 0%, #fff5f5 100%);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 100, 100, 0.1);
+            box-shadow: 0 10px 30px rgba(255, 0, 0, 0.05);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            z-index: 10001;
+            overflow: hidden;
+            opacity: 0;
+            pointer-events: none;
+            transform-origin: right center;
+        }
+
+        .liked-projects-drawer.expanded {
+            width: 420px;
+            height: 420px;
+            opacity: 1;
+            pointer-events: auto;
+            padding: 20px;
+            overflow: visible;
+        }
+
+        .liked-projects-drawer .drawer-content {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            pointer-events: none;
+            overflow-y: auto;
+            max-height: 100%;
+        }
+
+        .liked-projects-drawer.expanded .drawer-content {
             opacity: 1;
             pointer-events: auto;
         }
@@ -1284,61 +1319,160 @@
                 
                 // Update UI
                 document.getElementById('viewer-title-display').textContent = project.title;
+                
+                // Close drawers
+                document.getElementById('user-projects-drawer').classList.remove('expanded');
+                document.getElementById('liked-projects-drawer').classList.remove('expanded');
             };
 
-            // Drawer functions - using original expand/collapse style
-        function toggleUserProjectsDrawer() {
-            const drawer = document.getElementById('user-projects-drawer');
-            
-            if (drawer.classList.contains('expanded')) {
-                drawer.classList.remove('expanded');
-            } else {
-                drawer.classList.add('expanded');
+            // Liked projects caching system
+            window.toggleLikeProject = async (projectId, projectData) => {
+                if (!window.currentUser) return;
                 
-                // Load user projects when expanding
-                if (window.currentUser) {
-                    window.loadUserProjects().then(projects => {
-                        const content = document.getElementById('user-projects-content');
-                        if (projects.length > 0) {
-                            content.innerHTML = projects.map((project, index) => `
-                                <div class="drawer-project-item" onclick="window.resumeProject(${JSON.stringify(project).replace(/"/g, '&quot;')})" style="cursor: pointer; padding: 10px; border: 1px solid rgba(0,0,0,0.05); border-radius: 12px; background: rgba(0,0,0,0.02); transition: all 0.2s;">
-                                    <div style="display: flex; align-items: center; gap: 10px;">
-                                        ${project.thumbnail ? `<img src="${project.thumbnail}" style="width: 35px; height: 35px; border-radius: 6px; object-fit: cover;">` : `<div style="width: 35px; height: 35px; border-radius: 6px; background: rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; color: rgba(0,0,0,0.5); font-size: 12px; font-weight: 600;">${project.title[0]?.toUpperCase() || 'P'}</div>`}
-                                        <div style="flex: 1; min-width: 0;">
-                                            <div style="color: rgba(0,0,0,0.8); font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${project.title}</div>
-                                            <div style="color: rgba(0,0,0,0.5); font-size: 9px; margin-top: 2px;">${new Date(project.lastModified).toLocaleDateString()} ${project.isDraft ? '(Draft)' : ''}</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            `).join('');
-                            
-                            // Add hover effects
-                            content.querySelectorAll('.drawer-project-item').forEach(item => {
-                                item.addEventListener('mouseenter', () => {
-                                    item.style.backgroundColor = 'rgba(0,0,0,0.05)';
-                                    item.style.transform = 'translateY(-2px)';
-                                });
-                                item.addEventListener('mouseleave', () => {
-                                    item.style.backgroundColor = 'rgba(0,0,0,0.02)';
-                                    item.style.transform = 'translateY(0)';
-                                });
-                            });
-                        } else {
-                            content.innerHTML = '<div style="grid-column: span 2; padding: 30px; text-align: center; color: rgba(0,0,0,0.4); font-size: 12px;">No saved projects yet. Press Ctrl+S to save your work.</div>';
-                        }
+                const likedRef = ref(db, `users/${window.currentUser.uid}/liked/${projectId}`);
+                const snapshot = await new Promise(resolve => onValue(likedRef, resolve, { onlyOnce: true }));
+                
+                if (snapshot.exists()) {
+                    // Unlike
+                    await set(likedRef, null);
+                } else {
+                    // Like
+                    await set(likedRef, {
+                        ...projectData,
+                        id: projectId,
+                        likedAt: Date.now()
                     });
                 }
-            }
-        }
+                
+                // Update local cache
+                const userLikedRef = ref(db, `users/${window.currentUser.uid}/liked`);
+                onValue(userLikedRef, (snap) => {
+                    const liked = snap.val() ? Object.values(snap.val()) : [];
+                    localStorage.setItem('userLiked', JSON.stringify(liked));
+                }, { onlyOnce: true });
+            };
 
-        // Folder button click handler
-        const folderButton = document.querySelector('.nav-item[title="Folder"]');
-        if (folderButton) {
-            folderButton.addEventListener('click', (e) => {
+            window.loadLikedProjects = () => {
+                if (!window.currentUser) return [];
+                const cached = JSON.parse(localStorage.getItem('userLiked') || '[]');
+                if (cached.length > 0) return cached;
+                
+                const likedRef = ref(db, `users/${window.currentUser.uid}/liked`);
+                return new Promise((resolve) => {
+                    onValue(likedRef, (snapshot) => {
+                        const liked = snapshot.val() ? Object.values(snapshot.val()) : [];
+                        liked.sort((a, b) => (b.likedAt || 0) - (a.likedAt || 0));
+                        localStorage.setItem('userLiked', JSON.stringify(liked));
+                        resolve(liked);
+                    }, { onlyOnce: true });
+                });
+            };
+
+            function toggleLikedDrawer() {
+                const drawer = document.getElementById('liked-projects-drawer');
+                const otherDrawer = document.getElementById('user-projects-drawer');
+                otherDrawer.classList.remove('expanded');
+                
+                if (drawer.classList.contains('expanded')) {
+                    drawer.classList.remove('expanded');
+                } else {
+                    drawer.classList.add('expanded');
+                    if (window.currentUser) {
+                        window.loadLikedProjects().then(projects => {
+                            const content = document.getElementById('liked-projects-content');
+                            if (projects.length > 0) {
+                                content.innerHTML = projects.map(project => `
+                                    <div class="drawer-project-item" onclick="window.resumeProject(${JSON.stringify(project).replace(/"/g, '&quot;')})" style="cursor: pointer; padding: 10px; border: 1px solid rgba(0,0,0,0.05); border-radius: 12px; background: rgba(0,0,0,0.02); transition: all 0.2s;">
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            ${project.thumbnail ? `<img src="${project.thumbnail}" style="width: 35px; height: 35px; border-radius: 6px; object-fit: cover;">` : `<div style="width: 35px; height: 35px; border-radius: 6px; background: rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; color: rgba(0,0,0,0.5); font-size: 12px; font-weight: 600;">${project.title[0]?.toUpperCase() || 'P'}</div>`}
+                                            <div style="flex: 1; min-width: 0;">
+                                                <div style="color: rgba(0,0,0,0.8); font-size: 11px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${project.title}</div>
+                                                <div style="color: rgba(0,0,0,0.4); font-size: 9px; margin-top: 2px;">Liked Project</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('');
+                                
+                                content.querySelectorAll('.drawer-project-item').forEach(item => {
+                                    item.addEventListener('mouseenter', () => {
+                                        item.style.backgroundColor = 'rgba(255,100,100,0.05)';
+                                        item.style.transform = 'translateY(-2px)';
+                                    });
+                                    item.addEventListener('mouseleave', () => {
+                                        item.style.backgroundColor = 'rgba(0,0,0,0.02)';
+                                        item.style.transform = 'translateY(0)';
+                                    });
+                                });
+                            } else {
+                                content.innerHTML = '<div style="grid-column: span 2; padding: 30px; text-align: center; color: rgba(0,0,0,0.4); font-size: 12px;">No liked projects yet. Heart some projects to see them here!</div>';
+                            }
+                        });
+                    }
+                }
+            }
+
+            // Drawer functions - using original expand/collapse style
+            function toggleUserProjectsDrawer() {
+                const drawer = document.getElementById('user-projects-drawer');
+                const otherDrawer = document.getElementById('liked-projects-drawer');
+                otherDrawer.classList.remove('expanded');
+                
+                if (drawer.classList.contains('expanded')) {
+                    drawer.classList.remove('expanded');
+                } else {
+                    drawer.classList.add('expanded');
+                    
+                    // Load user projects when expanding
+                    if (window.currentUser) {
+                        window.loadUserProjects().then(projects => {
+                            const content = document.getElementById('user-projects-content');
+                            if (projects.length > 0) {
+                                content.innerHTML = projects.map((project, index) => `
+                                    <div class="drawer-project-item" onclick="window.resumeProject(${JSON.stringify(project).replace(/"/g, '&quot;')})" style="cursor: pointer; padding: 10px; border: 1px solid rgba(0,0,0,0.05); border-radius: 12px; background: rgba(0,0,0,0.02); transition: all 0.2s;">
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            ${project.thumbnail ? `<img src="${project.thumbnail}" style="width: 35px; height: 35px; border-radius: 6px; object-fit: cover;">` : `<div style="width: 35px; height: 35px; border-radius: 6px; background: rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; color: rgba(0,0,0,0.5); font-size: 12px; font-weight: 600;">${project.title[0]?.toUpperCase() || 'P'}</div>`}
+                                            <div style="flex: 1; min-width: 0;">
+                                                <div style="color: rgba(0,0,0,0.8); font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${project.title}</div>
+                                                <div style="color: rgba(0,0,0,0.5); font-size: 9px; margin-top: 2px;">${new Date(project.lastModified).toLocaleDateString()} ${project.isDraft ? '(Draft)' : ''}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('');
+                                
+                                // Add hover effects
+                                content.querySelectorAll('.drawer-project-item').forEach(item => {
+                                    item.addEventListener('mouseenter', () => {
+                                        item.style.backgroundColor = 'rgba(0,0,0,0.05)';
+                                        item.style.transform = 'translateY(-2px)';
+                                    });
+                                    item.addEventListener('mouseleave', () => {
+                                        item.style.backgroundColor = 'rgba(0,0,0,0.02)';
+                                        item.style.transform = 'translateY(0)';
+                                    });
+                                });
+                            } else {
+                                content.innerHTML = '<div style="grid-column: span 2; padding: 30px; text-align: center; color: rgba(0,0,0,0.4); font-size: 12px;">No saved projects yet. Press Ctrl+S to save your work.</div>';
+                            }
+                        });
+                    }
+                }
+            }
+
+            // Folder button click handler
+            const folderButton = document.querySelector('.nav-item[title="Folder"]');
+            if (folderButton) {
+                folderButton.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    toggleUserProjectsDrawer();
+                });
+            }
+
+            // Heart button click handler
+            const heartButton = document.querySelector('.nav-item[title="Heart"]');
+            heartButton.addEventListener('click', (e) => {
                 e.stopPropagation();
-                toggleUserProjectsDrawer();
+                toggleLikedDrawer();
             });
-        }
 
         // Remove old chevron listener since we removed the element
         // Remove bottom drawer toggle since we're using the circular style
@@ -1359,12 +1493,15 @@
             
             <!-- User Projects Drawer -->
         <div class="user-projects-drawer" id="user-projects-drawer">
-            <div class="drawer-header">
-                <div style="color: rgba(0,0,0,0.8); font-size: 14px; font-weight: 600;">My Projects</div>
-                <button class="close-drawer-btn" onclick="toggleUserProjectsDrawer()" style="background:none; border:none; color:rgba(0,0,0,0.4); font-size:24px; cursor:pointer; padding:0 5px; line-height:1;">×</button>
-            </div>
             <div class="drawer-content" id="user-projects-content">
                 <!-- User projects will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Liked Projects Drawer -->
+        <div class="liked-projects-drawer" id="liked-projects-drawer">
+            <div class="drawer-content" id="liked-projects-content">
+                <!-- Liked projects will be loaded here -->
             </div>
         </div>
 
@@ -2207,10 +2344,13 @@
 
                 // Like Trigger
                 const likeTrigger = document.getElementById('like-trigger');
-                likeTrigger.onclick = (e) => {
+                likeTrigger.onclick = async (e) => {
                     e.stopPropagation();
-                    if (window.likeProject && id) window.likeProject(id);
-                    document.getElementById('like-count').textContent = (project.likes || 0) + 1;
+                    if (id) {
+                        await window.toggleLikeProject(id, project);
+                        if (window.likeProject) window.likeProject(id);
+                        document.getElementById('like-count').textContent = (project.likes || 0) + 1;
+                    }
                 };
                 grid.appendChild(card);
             });
