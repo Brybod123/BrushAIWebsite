@@ -842,7 +842,7 @@
         .exit-editor:hover {
             background: #ff3b30;
             color: #fff;
-            transform: rotate(90deg) scale(1.1);
+            transform: scale(1.1);
         }
 
         /* History Sidebar */
@@ -1170,8 +1170,7 @@
             <div class="project-view" id="project-detail-view">
                 <div class="editor-header"
                     style="display: flex; justify-content: space-between; align-items: center; padding: 0 40px; margin-bottom: -15px;">
-                    <h2 id="project-editor-title" style="color: #fff; font-size: 18px; font-weight: 700;">Synthesis
-                        Workspace</h2>
+                    <h2 id="project-editor-title" style="color: #fff; font-size: 18px; font-weight: 700;">Workspace</h2>
                 </div>
                 <main class="workspace">
                     <aside class="history-sidebar" id="history-sidebar">
@@ -1256,7 +1255,7 @@
                         </div>
                     </div>
                     <div class="dock-input-wrapper">
-                        <input type="text" class="dock-prompt" id="dock-prompt-input" placeholder="Synthesis prompt...">
+                        <input type="text" class="dock-prompt" id="dock-prompt-input" placeholder="Enter prompt...">
                     </div>
                     <div id="viewer-title-display">Project Title</div>
                     <div style="display: flex; gap: 10px;">
@@ -1632,7 +1631,7 @@
         // --- Firebase Sycn & Screenshot Engine ---
         const deployBtn = document.querySelector('.exit-editor:not(#close-project-view)');
         deployBtn.addEventListener('click', async () => {
-            const title = prompt("Enter a title for your project:") || "Untitled Synthesis";
+            const title = prompt("Enter a title for your project:") || "Untitled Project";
             deployBtn.textContent = "Deploying...";
 
             try {
@@ -1669,13 +1668,13 @@
             grid.innerHTML = '';
 
             if (!projectsData || Object.keys(projectsData).length === 0) {
-                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 100px; color: rgba(0,0,0,0.3); font-weight: 600;">No projects found. Start a new synthesis below.</div>';
+                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 100px; color: rgba(0,0,0,0.3); font-weight: 600;">No projects found. Start a new project below.</div>';
                 return;
             }
 
             Object.entries(projectsData).reverse().forEach(([id, project]) => {
                 if (!project) return;
-                const title = project.title || "Untitled Synthesis";
+                const title = project.title || "Untitled Project";
                 const thumbnail = project.thumbnail || "";
                 const avatar = title[0].toUpperCase();
 
@@ -1687,7 +1686,7 @@
                         <div class="card-avatar">${avatar}</div>
                         <div class="card-info">
                             <div class="project-title">${title}</div>
-                            <div class="project-meta">Synthesis &bull; ${project.timestamp ? new Date(project.timestamp).toLocaleDateString() : 'Recent'}</div>
+                            <div class="project-meta">Project &bull; ${project.timestamp ? new Date(project.timestamp).toLocaleDateString() : 'Recent'}</div>
                         </div>
                     </div>
                 `;
@@ -1709,7 +1708,7 @@
                         authorAvatar.style.background = `url(${project.author.photo}) center/cover`;
                         authorAvatar.style.backgroundSize = "cover";
                     } else {
-                        authorName.textContent = "Synthesis Core";
+                        authorName.textContent = "Project Core";
                         authorAvatar.style.background = "#ccc";
                     }
 

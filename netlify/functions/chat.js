@@ -38,6 +38,9 @@ exports.handler = stream(async (event) => {
 
         console.log('Making request to:', endpoint);
 
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 second timeout
+
         const response = await fetch(endpoint, {
             method: 'POST',
             headers: {
@@ -48,9 +51,14 @@ exports.handler = stream(async (event) => {
             body: JSON.stringify({
                 model: model || 'openai-fast',
                 messages: messages,
-                stream: !!shouldStream
-            })
+                stream: !!shouldStream,
+                max_tokens: shouldStream ? 500 : 1000, // Limit tokens to prevent timeouts
+                temperature: 0.7
+            }),
+            signal: controller.signal
         });
+
+        clearTimeout(timeoutId);
 
         console.log('Response status:', response.status);
         console.log('Response headers:', Object.fromEntries(response.headers.entries()));
