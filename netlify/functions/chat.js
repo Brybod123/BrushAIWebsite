@@ -1,14 +1,8 @@
-// Native fetch is available in Node.js 18+ which Netlify uses by default.
+const { stream } = require("@netlify/functions");
 
-
-exports.handler = async (event, context) => {
-    // Only allow POST requests
-    if (event.httpMethod !== 'POST') {
-        return { statusCode: 405, body: 'Method Not Allowed' };
-    }
-
+exports.handler = stream(async (event) => {
     try {
-        const { prompt, model } = JSON.parse(event.body);
+        const { messages, model, stream: shouldStream } = JSON.parse(event.body);
         const API_KEY = process.env.POLLINATIONS_API_KEY;
 
         const response = await fetch('https://gen.pollinations.ai/v1/chat/completions', {
@@ -19,33 +13,28 @@ exports.handler = async (event, context) => {
             },
             body: JSON.stringify({
                 model: model || 'openai-fast',
-                messages: [
-                    { role: 'system', content: 'You are a professional creative assistant for BrushAI, a premium design platform.' },
-                    { role: 'user', content: prompt }
-                ],
-                stream: false
+                messages: messages,
+                stream: !!shouldStream
             })
         });
 
         if (!response.ok) {
-            const errorData = await response.text();
-            console.error('Pollinations API error:', errorData);
-            return {
-                statusCode: response.status,
-                body: JSON.stringify({ error: 'Failed to fetch from Pollinations' })
-            };
+            const errorMsg = await response.text();
+            console.error('Core Sync Failure:', errorMsg);
+            return { statusCode: response.status, body: errorMsg };
         }
 
-        const data = await response.json();
         return {
             statusCode: 200,
-            body: JSON.stringify(data)
+            headers: {
+                "Content-Type": "text/event-stream",
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive"
+            },
+            body: response.body
         };
     } catch (error) {
-        console.error('Error in chat function:', error);
-        return {
-            statusCode: 500,
-            body: JSON.stringify({ error: 'Internal Server Error' })
-        };
+        console.error('Synthesis Conduit Fault:', error);
+        return { statusCode: 500, body: 'Internal Synthesis Fault' };
     }
-};
+});

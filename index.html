@@ -943,7 +943,8 @@
 
         async function streamAIResponse(messages, model, callback) {
             try {
-                const response = await fetch('https://gen.pollinations.ai/v1/chat/completions', {
+                // Routing through Netlify Streaming Function to use secure API_KEY
+                const response = await fetch('/.netlify/functions/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
