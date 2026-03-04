@@ -130,15 +130,14 @@
             transform: translateX(20px);
             width: 400px;
             height: 90px;
-            background: rgba(30, 30, 32, 0.85);
-            backdrop-filter: blur(50px);
-            border: 1px solid rgba(255, 255, 255, 0.18);
+            background: radial-gradient(circle at 50% 50%, var(--inner-light) 0%, var(--inner-base) 100%);
+            border: 1px solid rgba(0, 0, 0, 0.1);
             border-radius: 45px;
             display: flex;
             align-items: center;
             padding: 0 35px;
             gap: 20px;
-            box-shadow: -20px 20px 60px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
             transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
             z-index: 1000;
             opacity: 0;
@@ -155,14 +154,14 @@
             width: 64px;
             height: 64px;
             border-radius: 32px;
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(0, 0, 0, 0.05);
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 24px;
             font-weight: 800;
-            color: #fff;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(0, 0, 0, 0.1);
         }
 
         .profile-info {
@@ -173,13 +172,13 @@
         }
 
         .profile-name {
-            color: #fff;
+            color: rgba(0, 0, 0, 0.85);
             font-weight: 700;
             font-size: 16px;
         }
 
         .profile-credits {
-            color: rgba(255, 255, 255, 0.4);
+            color: rgba(0, 0, 0, 0.5);
             font-size: 12px;
             font-weight: 600;
             letter-spacing: 0.05em;
@@ -194,9 +193,9 @@
             width: 44px;
             height: 44px;
             border-radius: 22px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #fff;
+            background: rgba(0, 0, 0, 0.03);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            color: rgba(0, 0, 0, 0.6);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -205,9 +204,10 @@
         }
 
         .profile-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.08);
+            border-color: rgba(0, 0, 0, 0.15);
             transform: translateY(-2px);
+            color: rgba(0, 0, 0, 0.9);
         }
 
         .profile-btn svg {
@@ -937,7 +937,7 @@
                     avatar.style.background = photoUrl ? `url(${photoUrl}) center/cover` : "rgba(0,0,0,0.1)";
 
                     menuAvatar.textContent = photoUrl ? "" : initial;
-                    menuAvatar.style.background = photoUrl ? `url(${photoUrl}) center/cover` : "rgba(255,255,255,0.05)";
+                    menuAvatar.style.background = photoUrl ? `url(${photoUrl}) center/cover` : "rgba(0,0,0,0.05)";
                     menuUsername.textContent = user.displayName || "User";
                     menuAuthBtn.title = "Sign Out";
                 } else {
@@ -945,7 +945,7 @@
                     avatar.style.background = "rgba(0,0,0,0.1)";
 
                     menuAvatar.textContent = "?";
-                    menuAvatar.style.background = "rgba(255,255,255,0.05)";
+                    menuAvatar.style.background = "rgba(0,0,0,0.05)";
                     menuUsername.textContent = "Guest User";
                     menuAuthBtn.title = "Sign In";
                 }
