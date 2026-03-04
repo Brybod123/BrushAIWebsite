@@ -1927,7 +1927,7 @@
 
                         try {
                             const json = JSON.parse(dataStr);
-                            const content = json.choices?.[0]?.delta?.content || "";
+                            const content = json.choices?.[0]?.delta?.content || json.choices?.[0]?.text || "";
                             if (content) {
                                 fullContent += content;
                                 if (callback) callback(fullContent, content);
@@ -1961,7 +1961,14 @@
 
                 try {
                     const finalCode = await streamAIResponse(messageStack, modelId, (full) => {
-                        websitePreview.srcdoc = full;
+                        // Clean markdown if present
+                        let cleanCode = full;
+                        if (cleanCode.includes('```html')) {
+                            cleanCode = cleanCode.split('```html')[1].split('```')[0].trim();
+                        } else if (cleanCode.includes('```')) {
+                            cleanCode = cleanCode.split('```')[1].split('```')[0].trim();
+                        }
+                        websitePreview.srcdoc = cleanCode;
                     });
                     messageStack.push({ role: 'assistant', content: finalCode });
                 } catch (e) {
