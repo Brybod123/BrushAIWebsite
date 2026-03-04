@@ -1304,18 +1304,40 @@
             window.resumeProject = async (project) => {
                 console.log('Resuming project:', project.title);
                 
-                // Load project data into editor
-                if (project.html) {
-                    websitePreview.srcdoc = project.html;
-                }
+                // Check if the current user is the author
+                const isOwner = window.currentUser && project.author && project.author.uid === window.currentUser.uid;
                 
-                if (project.prompts && Array.isArray(project.prompts)) {
-                    promptHistory = [...project.prompts];
-                    renderHistory();
+                if (isOwner || project.isDraft) {
+                    // Open in Editor Mode
+                    if (project.html) {
+                        websitePreview.srcdoc = project.html;
+                    }
+                    
+                    if (project.prompts && Array.isArray(project.prompts)) {
+                        promptHistory = [...project.prompts];
+                        renderHistory();
+                    }
+                    
+                    startEditorMode(project.html || '', false);
+                } else {
+                    // Open in Viewer Mode
+                    startEditorMode("", true);
+                    if (project.html) {
+                        websitePreview.srcdoc = project.html;
+                    }
+                    
+                    // Set metadata
+                    const authorName = document.getElementById('author-name');
+                    const authorAvatar = document.getElementById('author-avatar');
+                    if (project.author && project.author !== "Anonymous") {
+                        authorName.textContent = project.author.name;
+                        authorAvatar.style.background = `url(${project.author.photo}) center/cover`;
+                        authorAvatar.style.backgroundSize = "cover";
+                    } else {
+                        authorName.textContent = "Project Core";
+                        authorAvatar.style.background = "#ccc";
+                    }
                 }
-                
-                // Switch to editor mode
-                startEditorMode(project.html || '', false);
                 
                 // Update UI
                 document.getElementById('viewer-title-display').textContent = project.title;
