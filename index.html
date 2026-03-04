@@ -1891,9 +1891,6 @@
         });
 
         async function streamAIResponse(messages, model, callback) {
-            console.log('!!! streamAIResponse ENTERED !!!');
-            console.info('%c SYNTHESIS LOGGING ACTIVE ', 'background: #2196F3; color: white; font-weight: bold;');
-            
             const doc = websitePreview.contentDocument || websitePreview.contentWindow.document;
             if (currentMode === 'agent') {
                 doc.open();
@@ -1901,7 +1898,6 @@
                     <div id="loading-container" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; background:#f9f9f9; font-family:sans-serif; color:#333;">
                         <div style="border: 4px solid #f3f3f3; border-top: 4px solid #2196F3; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
                         <div style="font-weight:600;">Synthesis starting...</div>
-                        <div id="progress-log" style="margin-top:10px; font-size:12px; color:#666;">Waiting for data...</div>
                         <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
                     </div>
                 `);
@@ -1919,13 +1915,8 @@
                     })
                 });
 
-                console.log('!!! FETCH STATUS !!!', response.status, response.ok);
-                const progressEl = doc.getElementById('progress-log');
-                if (progressEl) progressEl.textContent = `Connected (Status ${response.status})...`;
-
                 if (!response.ok) {
                     const err = await response.text();
-                    console.error('!!! FETCH FAIL !!!', err);
                     throw new Error(err);
                 }
 
@@ -1936,59 +1927,32 @@
 
                 while (true) {
                     const { done, value } = await reader.read();
-                    if (done) {
-                        console.log('!!! READER DONE !!!');
-                        break;
-                    }
+                    if (done) break;
 
-                    const chunk = decoder.decode(value, { stream: true });
-                    console.log('!!! RAW CHUNK !!!', chunk);
-                    streamBuffer += chunk;
-                    
+                    streamBuffer += decoder.decode(value, { stream: true });
                     const lines = streamBuffer.split('\n');
                     streamBuffer = lines.pop();
 
                     for (const line of lines) {
                         const trimmed = line.trim();
-                        if (!trimmed) continue;
+                        if (!trimmed || !trimmed.startsWith('data: ')) continue;
 
-                        let data = trimmed;
-                        if (trimmed.startsWith('data: ')) {
-                            data = trimmed.substring(6);
-                        }
-
-                        if (data === '[DONE]') {
-                            console.log('!!! STREAM [DONE] RECEIVED !!!');
-                            continue;
-                        }
+                        const dataStr = trimmed.substring(6);
+                        if (dataStr === '[DONE]') continue;
 
                         try {
-                            const json = JSON.parse(data);
-                            console.log('!!! JSON DATA !!!', json);
-                            
-                            let text = "";
-                            if (json.choices?.[0]?.delta?.content) text = json.choices[0].delta.content;
-                            else if (json.choices?.[0]?.text) text = json.choices[0].text;
-                            else if (json.choices?.[0]?.message?.content) text = json.choices[0].message.content;
-                            else if (json.delta?.content) text = json.delta.content;
-                            else if (json.content) text = json.content;
-                            
+                            const json = JSON.parse(dataStr);
+                            const text = json.choices?.[0]?.delta?.content || json.choices?.[0]?.text || "";
                             if (text) {
                                 fullContent += text;
-                                if (progressEl) progressEl.textContent = `Receiving data (${fullContent.length} bytes)...`;
-                                if (callback) {
-                                    callback(fullContent, text);
-                                }
+                                if (callback) callback(fullContent, text);
                             }
-                        } catch (e) {
-                            // Suppress partial JSON errors
-                        }
+                        } catch (e) {}
                     }
                 }
                 return fullContent;
             } catch (error) {
-                console.error('!!! STREAM FATAL ERROR !!!', error);
-                if (progressEl) progressEl.textContent = `Error: ${error.message}`;
+                console.error('Stream Error:', error);
                 throw error;
             }
         }
@@ -2009,44 +1973,27 @@
                 doc.open();
 
                 try {
-                    console.log('!!! updateWebsite: ENTERING AGENT MODE !!!');
                     const finalCode = await streamAIResponse(messageStack, modelId, (full, chunk) => {
-                        console.log('--- SYNERGY CHUNK ---', chunk.length);
-                        
-                        // Enhanced cleaning logic
-                        let display = full;
-                        
-                        // If it contains triple backticks, try to extract the code
-                        if (display.includes('```')) {
-                            const parts = display.split('```');
+                        let cleanCode = full;
+                        if (cleanCode.includes('```')) {
+                            const parts = cleanCode.split('```');
                             if (parts.length > 1) {
-                                // Take the content after the first opening backtick
-                                display = parts[1];
-                                // Remove language identifier if it exists (e.g., 'html\n' or 'javascript\n')
-                                const newlineIndex = display.indexOf('\n');
+                                cleanCode = parts[1];
+                                const newlineIndex = cleanCode.indexOf('\n');
                                 if (newlineIndex !== -1 && newlineIndex < 10) {
-                                    const firstLine = display.substring(0, newlineIndex).toLowerCase();
-                                    if (firstLine.includes('html') || firstLine.includes('css') || firstLine.includes('js') || firstLine.includes('xml')) {
-                                        display = display.substring(newlineIndex + 1);
+                                    const firstLine = cleanCode.substring(0, newlineIndex).toLowerCase();
+                                    if (['html', 'css', 'js', 'xml', 'javascript', 'typescript'].some(lang => firstLine.includes(firstLine))) {
+                                        cleanCode = cleanCode.substring(newlineIndex + 1);
                                     }
                                 }
                             }
                         }
+                        if (cleanCode.includes('```')) cleanCode = cleanCode.split('```')[0];
                         
-                        // Final check: if the display still contains closing backticks, clean them up
-                        if (display.includes('```')) {
-                            display = display.split('```')[0];
-                        }
-                        
-                        // Update iframe immediately if we have content
-                        if (display.trim()) {
-                            websitePreview.srcdoc = display;
-                        } else if (full.trim()) {
-                            // Fallback if cleaning removed everything but full has content
-                            websitePreview.srcdoc = full;
+                        if (cleanCode.trim()) {
+                            websitePreview.srcdoc = cleanCode;
                         }
                     });
-                    console.log('!!! updateWebsite: SUCCESS !!!');
                     messageStack.push({ role: 'assistant', content: finalCode });
                 } catch (e) {
                     console.error('!!! updateWebsite: FATAL !!!', e);
