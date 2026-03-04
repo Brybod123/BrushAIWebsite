@@ -7,8 +7,6 @@
 
 [functions]
   directory = "netlify/functions"
-  node_version = "18"
-  included_files = ["!node_modules/**"]
 
 [[redirects]]
   from = "/api/*"
