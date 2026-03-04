@@ -1892,6 +1892,14 @@
 
         async function streamAIResponse(messages, model, callback) {
             console.log('--- STARTING AI STREAM ---', { model, messageCount: messages.length });
+            // Add a temporary loading message to the iframe
+            const doc = websitePreview.contentDocument || websitePreview.contentWindow.document;
+            if (currentMode === 'agent') {
+                doc.open();
+                doc.write('<div style="color:#666; background:#f9f9f9; padding:20px; font-family:sans-serif;">Synthesis starting...</div>');
+                doc.close();
+            }
+
             try {
                 // Routing through Netlify Streaming Function to use secure API_KEY
                 const response = await fetch('/.netlify/functions/chat', {
@@ -1932,9 +1940,26 @@
 
                     for (const line of lines) {
                         const trimmedLine = line.trim();
-                        if (!trimmedLine || !trimmedLine.startsWith('data: ')) continue;
+                        if (!trimmedLine) continue;
+                        
+                        // Handle potential non-SSE format from some providers
+                        let dataStr = trimmedLine;
+                        if (trimmedLine.startsWith('data: ')) {
+                            dataStr = trimmedLine.replace('data: ', '');
+                        } else {
+                            // Try to parse the line as JSON directly if it doesn't have the data: prefix
+                            try {
+                                const json = JSON.parse(trimmedLine);
+                                if (json.choices) {
+                                    // It's a valid JSON response but missing the SSE prefix
+                                } else {
+                                    continue; 
+                                }
+                            } catch (e) {
+                                continue;
+                            }
+                        }
 
-                        const dataStr = trimmedLine.replace('data: ', '');
                         if (dataStr === '[DONE]') {
                             console.log('--- DATA [DONE] ---');
                             continue;
