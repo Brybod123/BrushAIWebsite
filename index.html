@@ -1891,6 +1891,7 @@
         });
 
         async function streamAIResponse(messages, model, callback) {
+            console.log('!!! streamAIResponse ENTERED !!!');
             const doc = websitePreview.contentDocument || websitePreview.contentWindow.document;
             if (currentMode === 'agent') {
                 doc.open();
@@ -1917,6 +1918,7 @@
 
                 if (!response.ok) {
                     const err = await response.text();
+                    console.error('!!! FETCH FAIL !!!', err);
                     throw new Error(err);
                 }
 
@@ -1945,6 +1947,7 @@
                             const text = json.choices?.[0]?.delta?.content || json.choices?.[0]?.text || "";
                             if (text) {
                                 fullContent += text;
+                                console.log('!!! CHUNK RECEIVED !!!', text);
                                 if (callback) callback(fullContent, text);
                             }
                         } catch (e) {}
@@ -1982,7 +1985,7 @@
                                 const newlineIndex = cleanCode.indexOf('\n');
                                 if (newlineIndex !== -1 && newlineIndex < 10) {
                                     const firstLine = cleanCode.substring(0, newlineIndex).toLowerCase();
-                                    if (['html', 'css', 'js', 'xml', 'javascript', 'typescript'].some(lang => firstLine.includes(firstLine))) {
+                                    if (['html', 'css', 'js', 'xml', 'javascript', 'typescript'].some(lang => firstLine.includes(lang))) {
                                         cleanCode = cleanCode.substring(newlineIndex + 1);
                                     }
                                 }
@@ -1994,6 +1997,10 @@
                             websitePreview.srcdoc = cleanCode;
                         }
                     });
+                    
+                    console.log('!!! COMPLETE HTML GENERATED !!!');
+                    console.log(finalCode);
+                    
                     messageStack.push({ role: 'assistant', content: finalCode });
                 } catch (e) {
                     console.error('!!! updateWebsite: FATAL !!!', e);
