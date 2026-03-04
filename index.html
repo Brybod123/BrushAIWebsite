@@ -1891,6 +1891,7 @@
         });
 
         async function streamAIResponse(messages, model, callback) {
+            console.log('--- STARTING AI STREAM ---', { model, messageCount: messages.length });
             try {
                 // Routing through Netlify Streaming Function to use secure API_KEY
                 const response = await fetch('/.netlify/functions/chat', {
@@ -1903,7 +1904,13 @@
                     })
                 });
 
-                if (!response.ok) throw new Error(`Synthesis error: ${response.status}`);
+                console.log('--- FETCH RESPONSE ---', { ok: response.ok, status: response.status });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('--- FETCH ERROR ---', errorText);
+                    throw new Error(`Synthesis error: ${response.status} - ${errorText}`);
+                }
 
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder();
@@ -1912,9 +1919,14 @@
 
                 while (true) {
                     const { done, value } = await reader.read();
-                    if (done) break;
+                    if (done) {
+                        console.log('--- STREAM DONE ---');
+                        break;
+                    }
 
-                    streamBuffer += decoder.decode(value, { stream: true });
+                    const chunk = decoder.decode(value, { stream: true });
+                    streamBuffer += chunk;
+                    
                     const lines = streamBuffer.split('\n');
                     streamBuffer = lines.pop(); // Hold onto partial lines
 
@@ -1923,23 +1935,29 @@
                         if (!trimmedLine || !trimmedLine.startsWith('data: ')) continue;
 
                         const dataStr = trimmedLine.replace('data: ', '');
-                        if (dataStr === '[DONE]') continue;
+                        if (dataStr === '[DONE]') {
+                            console.log('--- DATA [DONE] ---');
+                            continue;
+                        }
 
                         try {
                             const json = JSON.parse(dataStr);
                             const content = json.choices?.[0]?.delta?.content || json.choices?.[0]?.text || "";
                             if (content) {
                                 fullContent += content;
-                                if (callback) callback(fullContent, content);
+                                if (callback) {
+                                    // console.log('--- CHUNK RECEIVED ---', content.length);
+                                    callback(fullContent, content);
+                                }
                             }
                         } catch (e) {
-                            // Suppress parsing errors for partial/malformed frames
+                            console.warn('--- PARSE ERROR ---', e.message, dataStr);
                         }
                     }
                 }
                 return fullContent;
             } catch (error) {
-                console.error('Synthesis Sync Lost:', error);
+                console.error('--- STREAMING SYNC LOST ---', error);
                 throw error;
             }
         }
@@ -1961,20 +1979,37 @@
 
                 try {
                     const finalCode = await streamAIResponse(messageStack, modelId, (full, chunk) => {
-                        console.log('--- SYNERGY CHUNK ---');
-                        console.log(chunk);
+                        console.log('--- SYNERGY CHUNK RECEIVED ---', { 
+                            chunkLength: chunk.length, 
+                            totalLength: full.length,
+                            preview: chunk.substring(0, 50) + (chunk.length > 50 ? '...' : '')
+                        });
                         
                         // Clean markdown if present
                         let cleanCode = full;
                         if (cleanCode.includes('```html')) {
                             cleanCode = cleanCode.split('```html')[1].split('```')[0].trim();
                         } else if (cleanCode.includes('```')) {
-                            cleanCode = cleanCode.split('```')[1].split('```')[0].trim();
+                            const parts = cleanCode.split('```');
+                            if (parts.length >= 2) {
+                                // Find the first block that looks like code
+                                cleanCode = parts[1].trim();
+                            }
                         }
-                        websitePreview.srcdoc = cleanCode;
+                        
+                        // Ensure we have something to show
+                        if (cleanCode) {
+                            websitePreview.srcdoc = cleanCode;
+                        } else {
+                            // Fallback to full if cleaning fails or is in progress
+                            websitePreview.srcdoc = full;
+                        }
                     });
                     messageStack.push({ role: 'assistant', content: finalCode });
                 } catch (e) {
+                    console.error('--- UPDATE WEBSITE ERROR ---', e);
+                    const doc = websitePreview.contentDocument || websitePreview.contentWindow.document;
+                    doc.open();
                     doc.write(`<div style="color:red; background:#000; padding:20px;">Synthesis Error: ${e.message}</div>`);
                     doc.close();
                 }
