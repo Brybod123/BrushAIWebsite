@@ -1686,38 +1686,20 @@
                             <polyline points="6 9 12 15 18 9"></polyline>
                         </svg>
                         <div class="dropdown-menu" id="type-menu" style="bottom: 80px;">
-                            <div class="model-option selected" data-type="agent">Agent</div>
-                            <div class="model-option" data-type="chat">Chat</div>
+                            <div class="type-option selected" data-type="agent">Agent</div>
+                            <div class="type-option" data-type="chat">Chat</div>
                         </div>
                     </div>
 
                     <div class="dock-model-selector" id="dock-model-trigger">
-                        <span id="dock-selected-model">GPT 5 Nano</span>
+                        <span id="dock-selected-model">GPT-5 Nano</span>
                         <svg class="dropdown-arrow" viewBox="0 0 24 24" width="16" height="16">
                             <polyline points="6 9 12 15 18 9"></polyline>
                         </svg>
                         <div class="dropdown-menu" id="dock-model-menu" style="bottom: 80px;">
-                            <div class="model-option selected" data-model="openai-fast" data-cost="0">GPT 5 Nano <span
-                                    style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(Free)</span></div>
-                            <div class="model-option" data-model="grok" data-cost="5">Grok 4 Fast <span
-                                    style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(5 <i
-                                        class="fa-solid fa-brush"></i>)</span></div>
-                            <div class="model-option" data-model="claude" data-cost="0">Haiku 4.5 <span
-                                    style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(Free)</span></div>
-                            <div class="model-option" data-model="mistral" data-cost="0">Mistral Small 24B <span
-                                    style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(Free)</span></div>
-                            <div class="model-option" data-model="gemini" data-cost="25">Gemini 3 Flash <span
-                                    style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(25 <i
-                                        class="fa-solid fa-brush"></i>)</span></div>
-                            <div class="model-option" data-model="google/gemini-2.5-flash" data-cost="15">Gemini 2.5
-                                Flash <span style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(15 <i
-                                        class="fa-solid fa-brush"></i>)</span>
-                            </div>
-                            <div class="model-option" data-model="google/gemini-3.1-flash-lite-preview" data-cost="10">
-                                Gemini 3.1
-                                Flash Lite <span style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(10 <i
-                                        class="fa-solid fa-brush"></i>)</span>
-                            </div>
+                            <div class="model-option selected" data-model="openai/gpt-5-nano-2025-08-07" data-cost="0">GPT-5 Nano</div>
+                            <div class="model-option" data-model="google/gemini-2.0-flash-001" data-cost="0">Gemini 2.0 Flash</div>
+                            <div class="model-option" data-model="google/gemini-2.0-pro-exp-02-05:free" data-cost="10">Gemini 2.0 Pro</div>
                         </div>
                     </div>
                     <div class="dock-input-wrapper">
@@ -1965,7 +1947,7 @@
             editorDock.classList.add('streaming');
             if (currentMode === 'agent') previewContainer.classList.add('blob-mode');
 
-            const modelId = dockMenu.querySelector('.model-option.selected')?.getAttribute('data-model') || 'openai-fast';
+            const modelId = dockMenu.querySelector('.model-option.selected')?.getAttribute('data-model') || 'openai/gpt-5-nano-2025-08-07';
 
             if (currentMode === 'agent') {
                 promptHistory.push(prompt);
