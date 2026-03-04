@@ -1325,6 +1325,14 @@
             }
         }
 
+        // Folder button click handler
+        const folderButton = document.querySelector('.nav-item[title="Folder"]');
+        if (folderButton) {
+            folderButton.addEventListener('click', () => {
+                toggleUserProjectsDrawer();
+            });
+        }
+
         // Show bottom drawer toggle only for authenticated users
         if (window.currentUser) {
             document.getElementById('bottom-drawer-toggle').style.display = 'flex';
