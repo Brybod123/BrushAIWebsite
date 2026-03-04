@@ -67,16 +67,8 @@ exports.handler = stream(async (event, stream) => {
             return { statusCode: response.status, body: errorMsg };
         }
 
-        // Use the reader to pipe the response directly to Netlify's stream
-        const reader = response.body.getReader();
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            // Write chunks to the Netlify stream immediately to prevent inactivity timeout
-            stream.write(value);
-        }
-
-        return;
+        // Pipe the response body directly to the Netlify stream
+        return response.body;
     } catch (error) {
         console.error('Synthesis Conduit Fault:', error);
         console.error('Error stack:', error.stack);
