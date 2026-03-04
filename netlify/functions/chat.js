@@ -52,7 +52,7 @@ exports.handler = stream(async (event) => {
                 model: model || 'openai-fast',
                 messages: messages,
                 stream: !!shouldStream,
-                max_tokens: 16000,
+                max_tokens: 4000,
                 temperature: 0.7
             }),
             signal: controller.signal
@@ -60,28 +60,21 @@ exports.handler = stream(async (event) => {
 
         clearTimeout(timeoutId);
 
-        console.log('Response status:', response.status);
-        console.log('Response headers:', Object.fromEntries(response.headers.entries()));
-
         if (!response.ok) {
             const errorMsg = await response.text();
-            console.error('Remote API Failure:', {
-                status: response.status,
-                statusText: response.statusText,
-                body: errorMsg
-            });
             return { statusCode: response.status, body: errorMsg };
         }
 
-        return {
-            statusCode: 200,
-            headers: {
-                "Content-Type": "text/event-stream",
-                "Cache-Control": "no-cache",
-                "Connection": "keep-alive"
-            },
-            body: response.body
-        };
+        // Use the reader to pipe the response directly to Netlify's stream
+        const reader = response.body.getReader();
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            // Write chunks to the Netlify stream immediately to prevent inactivity timeout
+            stream.write(value);
+        }
+
+        return;
     } catch (error) {
         console.error('Synthesis Conduit Fault:', error);
         console.error('Error stack:', error.stack);
