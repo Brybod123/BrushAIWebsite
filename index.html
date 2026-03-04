@@ -847,7 +847,87 @@
             transform: scale(1.1);
         }
 
-        /* History Sidebar */
+        /* User Projects Drawer */
+        .user-projects-drawer {
+            position: fixed;
+            bottom: -100%;
+            left: 0;
+            right: 0;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            background: rgba(30, 30, 32, 0.98);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px 20px 0 0;
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 10000;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .user-projects-drawer.open {
+            transform: translateY(0);
+        }
+
+        .drawer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .close-drawer-btn {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 24px;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .close-drawer-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .drawer-content {
+            padding: 0 20px 20px;
+            max-height: 50vh;
+            overflow-y: auto;
+        }
+
+        .bottom-drawer-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(30, 30, 32, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 1000;
+            transition: all 0.2s;
+            backdrop-filter: blur(10px);
+        }
+
+        .bottom-drawer-toggle:hover {
+            background: rgba(30, 30, 32, 1);
+            transform: scale(1.1);
+        }
         .history-sidebar {
             width: 280px;
             display: flex;
@@ -1195,40 +1275,60 @@
                 document.getElementById('viewer-title-display').textContent = project.title;
             };
 
-            // Start Hydration
-            window.loadProjectsFromFirebase(window.populateGrid);
+            // Drawer functions
+        let isDrawerOpen = false;
+
+        function toggleUserProjectsDrawer() {
+            const drawer = document.getElementById('user-projects-drawer');
+            const toggle = document.getElementById('bottom-drawer-toggle');
             
-            // Load and display recent projects for authenticated users
-            if (window.currentUser) {
-                window.loadUserProjects().then(projects => {
-                    const recentProjectsList = document.getElementById('recent-projects-list');
-                    if (recentProjectsList && projects.length > 0) {
-                        recentProjectsList.innerHTML = projects.slice(0, 5).map((project, index) => `
-                            <div class="recent-project-item" onclick="window.resumeProject(${JSON.stringify(project).replace(/"/g, '&quot;')})" style="cursor: pointer; padding: 8px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); transition: all 0.2s;">
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    ${project.thumbnail ? `<img src="${project.thumbnail}" style="width: 30px; height: 30px; border-radius: 6px; object-fit: cover;">` : `<div style="width: 30px; height: 30px; border-radius: 6px; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; font-weight: 600;">${project.title[0]?.toUpperCase() || 'P'}</div>`}
-                                    <div style="flex: 1; min-width: 0;">
-                                        <div style="color: #fff; font-size: 11px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${project.title}</div>
-                                        <div style="color: rgba(255,255,255,0.5); font-size: 9px; margin-top: 2px;">${new Date(project.lastModified).toLocaleDateString()}</div>
+            isDrawerOpen = !isDrawerOpen;
+            
+            if (isDrawerOpen) {
+                drawer.classList.add('open');
+                toggle.style.display = 'none';
+                
+                // Load user projects when opening
+                if (window.currentUser) {
+                    window.loadUserProjects().then(projects => {
+                        const content = document.getElementById('user-projects-content');
+                        if (projects.length > 0) {
+                            content.innerHTML = projects.map((project, index) => `
+                                <div class="drawer-project-item" onclick="window.resumeProject(${JSON.stringify(project).replace(/"/g, '&quot;')})" style="cursor: pointer; padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); transition: all 0.2s;">
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        ${project.thumbnail ? `<img src="${project.thumbnail}" style="width: 40px; height: 40px; border-radius: 8px; object-fit: cover;">` : `<div style="width: 40px; height: 40px; border-radius: 8px; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; font-weight: 600;">${project.title[0]?.toUpperCase() || 'P'}</div>`}
+                                        <div style="flex: 1; min-width: 0;">
+                                            <div style="color: #fff; font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${project.title}</div>
+                                            <div style="color: rgba(255,255,255,0.6); font-size: 10px; margin-top: 3px;">${new Date(project.lastModified).toLocaleDateString()} ${project.isDraft ? '(Draft)' : ''}</div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        `).join('');
-                        
-                        // Add hover effect
-                        recentProjectsList.querySelectorAll('.recent-project-item').forEach(item => {
-                            item.addEventListener('mouseenter', () => {
-                                item.style.backgroundColor = 'rgba(255,255,255,0.1)';
+                            `).join('');
+                            
+                            // Add hover effects
+                            content.querySelectorAll('.drawer-project-item').forEach(item => {
+                                item.addEventListener('mouseenter', () => {
+                                    item.style.backgroundColor = 'rgba(255,255,255,0.1)';
+                                });
+                                item.addEventListener('mouseleave', () => {
+                                    item.style.backgroundColor = 'transparent';
+                                });
                             });
-                            item.addEventListener('mouseleave', () => {
-                                item.style.backgroundColor = 'transparent';
-                            });
-                        });
-                    } else {
-                        recentProjectsList.innerHTML = '<div style="padding: 20px; text-align: center; color: rgba(255,255,255,0.5); font-size: 11px;">No recent projects</div>';
-                    }
-                });
+                        } else {
+                            content.innerHTML = '<div style="padding: 40px; text-align: center; color: rgba(255,255,255,0.6); font-size: 13px;">No saved projects yet. Press Ctrl+S to save your work.</div>';
+                        }
+                    });
+                }
+            } else {
+                drawer.classList.remove('open');
+                toggle.style.display = 'flex';
             }
+        }
+
+        // Show bottom drawer toggle only for authenticated users
+        if (window.currentUser) {
+            document.getElementById('bottom-drawer-toggle').style.display = 'flex';
+        }
         }
 
         initFirebase();
@@ -1240,15 +1340,23 @@
                 <div class="logo-text">B<span>r</span></div>
             </div>
             
-            <!-- Recent Projects Section -->
-            <div class="recent-projects" id="recent-projects" style="margin-top: 20px;">
-                <div style="padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.1);">
-                    <div style="color: #fff; font-size: 12px; font-weight: 600; margin-bottom: 10px; opacity: 0.7;">RECENT PROJECTS</div>
-                </div>
-                <div id="recent-projects-list" style="max-height: 300px; overflow-y: auto;">
-                    <!-- Recent projects will be injected here -->
-                </div>
+            <!-- User Projects Drawer -->
+        <div class="user-projects-drawer" id="user-projects-drawer">
+            <div class="drawer-header">
+                <div style="color: #fff; font-size: 14px; font-weight: 600; margin-bottom: 15px;">My Projects</div>
+                <button class="close-drawer-btn" onclick="toggleUserProjectsDrawer()">×</button>
             </div>
+            <div class="drawer-content" id="user-projects-content">
+                <!-- User projects will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Bottom Drawer Toggle -->
+        <div class="bottom-drawer-toggle" id="bottom-drawer-toggle" onclick="toggleUserProjectsDrawer()" style="display: none;">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                <path d="M3 7h18v2H3v-2h18v-2H3v2zm0 6h18v2H3v-2h18v-2H3v2z"/>
+            </svg>
+        </div>
             <div class="nav-items-top">
                 <div class="nav-item" title="Folder"><svg viewBox="0 0 24 24">
                         <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
@@ -1997,51 +2105,16 @@
             if (!grid) return;
             grid.innerHTML = '';
 
-            let allProjects = [];
-
-            // Add user's cached projects first (if authenticated)
-            if (window.currentUser) {
-                window.loadUserProjects().then(userProjects => {
-                    // Filter out drafts that are already in public projects
-                    const cachedProjects = userProjects.filter(project => 
-                        project.isDraft || !Object.values(projectsData || {}).some(publicProject => 
-                            publicProject.title === project.title && 
-                            Math.abs((publicProject.timestamp || 0) - (project.lastModified || 0)) < 5000 // Within 5 seconds
-                        )
-                    );
-                    
-                    allProjects = [...cachedProjects, ...Object.values(projectsData || {})];
-                    
-                    if (allProjects.length === 0) {
-                        grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 100px; color: rgba(0,0,0,0.3); font-weight: 600;">No projects found. Start a new project below.</div>';
-                        return;
-                    }
-
-                    // Sort by timestamp (newest first)
-                    allProjects.sort((a, b) => {
-                        const timeA = a.lastModified || a.timestamp || 0;
-                        const timeB = b.lastModified || b.timestamp || 0;
-                        return timeB - timeA;
-                    });
-
-                    // Render all projects
-                    Object.entries(allProjects).reverse().forEach(([id, project]) => {
-                        const projectObj = typeof project === 'object' ? project : { ...project, id };
-                        renderProjectCard(projectObj, id);
-                    });
-                });
-            } else {
-                // Not authenticated - show only public projects
-                if (!projectsData || Object.keys(projectsData).length === 0) {
-                    grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 100px; color: rgba(0,0,0,0.3); font-weight: 600;">No projects found. Start a new project below.</div>';
-                    return;
-                }
-
-                Object.entries(projectsData).reverse().forEach(([id, project]) => {
-                    if (!project) return;
-                    renderProjectCard({ ...project, id }, id);
-                });
+            // Only show public projects on homepage (no cached projects)
+            if (!projectsData || Object.keys(projectsData).length === 0) {
+                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 100px; color: rgba(0,0,0,0.3); font-weight: 600;">No projects found. Start a new project below.</div>';
+                return;
             }
+
+            Object.entries(projectsData).reverse().forEach(([id, project]) => {
+                if (!project) return;
+                renderProjectCard({ ...project, id }, id);
+            });
         }
 
         function renderProjectCard(project, id) {
