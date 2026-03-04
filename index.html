@@ -1960,7 +1960,10 @@
                 doc.open();
 
                 try {
-                    const finalCode = await streamAIResponse(messageStack, modelId, (full) => {
+                    const finalCode = await streamAIResponse(messageStack, modelId, (full, chunk) => {
+                        console.log('--- SYNERGY CHUNK ---');
+                        console.log(chunk);
+                        
                         // Clean markdown if present
                         let cleanCode = full;
                         if (cleanCode.includes('```html')) {
