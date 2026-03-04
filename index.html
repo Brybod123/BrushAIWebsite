@@ -1892,10 +1892,19 @@
 
         async function streamAIResponse(messages, model, callback) {
             console.log('!!! streamAIResponse ENTERED !!!');
+            // Force a console message to verify logging is working
+            console.info('%c SYNTHESIS LOGGING ACTIVE ', 'background: #2196F3; color: white; font-weight: bold;');
+            
             const doc = websitePreview.contentDocument || websitePreview.contentWindow.document;
             if (currentMode === 'agent') {
                 doc.open();
-                doc.write('<div id="loading-synthesis" style="color:#666; background:#f9f9f9; padding:20px; font-family:sans-serif; border: 2px solid #2196F3; border-radius: 8px;">Synthesis starting (Secure Channel)...</div>');
+                doc.write(`
+                    <div id="loading-container" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; background:#f9f9f9; font-family:sans-serif; color:#333;">
+                        <div style="border: 4px solid #f3f3f3; border-top: 4px solid #2196F3; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
+                        <div style="font-weight:600;">Synthesis starting...</div>
+                        <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+                    </div>
+                `);
                 doc.close();
             }
 
@@ -1945,17 +1954,32 @@
                             data = trimmed.substring(6);
                         }
 
-                        if (data === '[DONE]') continue;
+                        if (data === '[DONE]') {
+                            console.log('!!! STREAM [DONE] RECEIVED !!!');
+                            continue;
+                        }
 
                         try {
                             const json = JSON.parse(data);
-                            const text = json.choices?.[0]?.delta?.content || json.choices?.[0]?.text || "";
+                            console.log('!!! RAW JSON CHUNK !!!', json);
+                            
+                            // Universal content extraction
+                            let text = "";
+                            if (json.choices?.[0]?.delta?.content) text = json.choices[0].delta.content;
+                            else if (json.choices?.[0]?.text) text = json.choices[0].text;
+                            else if (json.choices?.[0]?.message?.content) text = json.choices[0].message.content;
+                            else if (json.delta?.content) text = json.delta.content;
+                            else if (json.content) text = json.content;
+                            
                             if (text) {
                                 fullContent += text;
-                                if (callback) callback(fullContent, text);
+                                if (callback) {
+                                    console.log('!!! CALLING CALLBACK WITH TEXT !!!', text.substring(0, 20));
+                                    callback(fullContent, text);
+                                }
                             }
                         } catch (e) {
-                            // Partial JSON usually
+                            // Suppress partial JSON errors
                         }
                     }
                 }
@@ -1984,22 +2008,39 @@
                 try {
                     console.log('!!! updateWebsite: ENTERING AGENT MODE !!!');
                     const finalCode = await streamAIResponse(messageStack, modelId, (full, chunk) => {
-                        // Very simple cleaning - just strip markdown if it exists
+                        console.log('--- SYNERGY CHUNK ---', chunk.length);
+                        
+                        // Enhanced cleaning logic
                         let display = full;
+                        
+                        // If it contains triple backticks, try to extract the code
                         if (display.includes('```')) {
                             const parts = display.split('```');
-                            // If we have at least one block started
                             if (parts.length > 1) {
+                                // Take the content after the first opening backtick
                                 display = parts[1];
-                                // Strip language identifier if it exists (e.g. 'html\n')
-                                if (display.startsWith('html')) display = display.substring(4);
-                                if (display.startsWith('\n')) display = display.substring(1);
+                                // Remove language identifier if it exists (e.g., 'html\n' or 'javascript\n')
+                                const newlineIndex = display.indexOf('\n');
+                                if (newlineIndex !== -1 && newlineIndex < 10) {
+                                    const firstLine = display.substring(0, newlineIndex).toLowerCase();
+                                    if (firstLine.includes('html') || firstLine.includes('css') || firstLine.includes('js') || firstLine.includes('xml')) {
+                                        display = display.substring(newlineIndex + 1);
+                                    }
+                                }
                             }
                         }
                         
-                        // Direct update
+                        // Final check: if the display still contains closing backticks, clean them up
+                        if (display.includes('```')) {
+                            display = display.split('```')[0];
+                        }
+                        
+                        // Update iframe immediately if we have content
                         if (display.trim()) {
                             websitePreview.srcdoc = display;
+                        } else if (full.trim()) {
+                            // Fallback if cleaning removed everything but full has content
+                            websitePreview.srcdoc = full;
                         }
                     });
                     console.log('!!! updateWebsite: SUCCESS !!!');
