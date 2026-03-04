@@ -1682,23 +1682,22 @@
                 card.className = 'project-card';
                 
                 // Handle base64 thumbnails properly
-                let thumbnailStyle = '';
+                let thumbnailHtml = '';
                 if (thumbnail && thumbnail.startsWith('data:')) {
                     console.log('Processing base64 thumbnail for project:', title, 'Length:', thumbnail.length);
-                    // Escape the base64 data properly for HTML
-                    const escapedThumbnail = thumbnail.replace(/'/g, '&#39;').replace(/"/g, '&quot;');
-                    thumbnailStyle = `background-image: url('${escapedThumbnail}'); background-size: cover; background-position: center;`;
+                    // Use img tag for base64 data (more reliable than CSS background-image)
+                    thumbnailHtml = `<img src="${thumbnail}" alt="${title}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 16px;">`;
                 } else if (thumbnail) {
                     console.log('Processing regular thumbnail URL for project:', title);
-                    thumbnailStyle = `background-image: url('${thumbnail}'); background-size: cover; background-position: center;`;
+                    thumbnailHtml = `<img src="${thumbnail}" alt="${title}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 16px;">`;
                 } else {
                     console.log('No thumbnail found for project:', title, 'Using fallback');
                     // Fallback gradient if no thumbnail
-                    thumbnailStyle = 'background: linear-gradient(135deg, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.1));';
+                    thumbnailHtml = `<div style="width: 100%; height: 100%; background: linear-gradient(135deg, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.1)); border-radius: 16px; display: flex; align-items: center; justify-content: center; color: rgba(0,0,0,0.3); font-size: 24px; font-weight: 600;">${avatar}</div>`;
                 }
                 
                 card.innerHTML = `
-                    <div class="card-thumbnail" style="${thumbnailStyle}"></div>
+                    <div class="card-thumbnail" style="padding: 0; overflow: hidden;">${thumbnailHtml}</div>
                     <div class="card-details">
                         <div class="card-avatar">${avatar}</div>
                         <div class="card-info">
