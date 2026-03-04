@@ -724,10 +724,12 @@
                             </svg>
                         </div>
                         <div class="dropdown-menu">
-                            <div class="model-option selected" data-model="openai-fast">OpenAI Fast</div>
-                            <div class="model-option" data-model="claude-fast">Claude Fast</div>
-                            <div class="model-option" data-model="gemini">Gemini</div>
-                            <div class="model-option" data-model="mistral">Mistral</div>
+                            <div class="model-option selected" data-model="openai">OpenAI GPT-5</div>
+                            <div class="model-option" data-model="claude">Claude 4.6</div>
+                            <div class="model-option" data-model="gemini">Gemini 3.1</div>
+                            <div class="model-option" data-model="qwen-coder">Qwen 3 Coder</div>
+                            <div class="model-option" data-model="mistral">Mistral AI</div>
+                            <div class="model-option" data-model="grok">Grok Intel</div>
                         </div>
                     </div>
                     <textarea class="engraved-input" placeholder="Imagine your website here..."></textarea>
@@ -800,10 +802,12 @@
                             <polyline points="6 9 12 15 18 9"></polyline>
                         </svg>
                         <div class="dropdown-menu" id="dock-model-menu" style="bottom: 80px;">
-                            <div class="model-option selected" data-model="openai-fast">OpenAI Fast</div>
-                            <div class="model-option" data-model="claude">Claude High</div>
+                            <div class="model-option selected" data-model="openai">OpenAI GPT-5</div>
+                            <div class="model-option" data-model="claude">Claude 4.6</div>
+                            <div class="model-option" data-model="gemini">Gemini 3.1</div>
+                            <div class="model-option" data-model="qwen-coder">Qwen 3 Coder</div>
                             <div class="model-option" data-model="mistral">Mistral AI</div>
-                            <div class="model-option" data-model="gemini">Gemini Core</div>
+                            <div class="model-option" data-model="grok">Grok Intel</div>
                         </div>
                     </div>
                     <div class="dock-input-wrapper">
@@ -1047,6 +1051,17 @@
 
         function startEditorMode(initialPrompt) {
             projectDetailView.classList.add('active');
+
+            // Sync Dock model with Home selection
+            const activeHomeModel = dropdown.querySelector('.model-option.selected');
+            if (activeHomeModel) {
+                const modelId = activeHomeModel.getAttribute('data-model');
+                const modelName = activeHomeModel.textContent;
+                document.getElementById('dock-selected-model').textContent = modelName;
+                dockOptions.forEach(opt => {
+                    opt.classList.toggle('selected', opt.getAttribute('data-model') === modelId);
+                });
+            }
 
             // Start fresh history
             promptHistory = [];
