@@ -736,17 +736,61 @@
         }
 
         @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
             to {
                 transform: rotate(360deg);
             }
         }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 
 <body>
     <div class="aluminum-surface" id="outer-surface"></div>
     <div class="noise-overlay"></div>
     <div class="brushed-overlay"></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+        import { getDatabase, ref, set, push, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCmA865qCphDGQ7FbZ_sq-x-jXBSSvDWpk",
+            authDomain: "vaccume-ae377.firebaseapp.com",
+            databaseURL: "https://vaccume-ae377-default-rtdb.firebaseio.com",
+            projectId: "vaccume-ae377",
+            storageBucket: "vaccume-ae377.firebasestorage.app",
+            messagingSenderId: "61792872105",
+            appId: "1:61792872105:web:71b2805c03afc6742e6bb8",
+            measurementId: "G-BRFFT3PB7V"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const db = getDatabase(app);
+
+        // Expose to window for the main app script
+        window.saveProjectToFirebase = async (projectData) => {
+            const projectsRef = ref(db, 'projects');
+            const newProjectRef = push(projectsRef);
+            return set(newProjectRef, {
+                ...projectData,
+                timestamp: Date.now()
+            });
+        };
+
+        window.loadProjectsFromFirebase = (callback) => {
+            const projectsRef = ref(db, 'projects');
+            onValue(projectsRef, (snapshot) => {
+                const data = snapshot.val();
+                callback(data);
+            });
+        };
+    </script>
 
     <main class="inner-panel" id="inner-surface">
         <aside class="sidebar">
@@ -800,37 +844,8 @@
         </aside>
 
         <section class="main-content">
-            <div class="project-grid">
-                <div class="project-card">
-                    <div class="card-thumbnail"></div>
-                    <div class="card-details">
-                        <div class="card-avatar">C</div>
-                        <div class="card-info">
-                            <div class="project-title">Cybernetic Neural Link Interface</div>
-                            <div class="project-meta">AI Core &bull; 2h ago</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="project-card">
-                    <div class="card-thumbnail"></div>
-                    <div class="card-details">
-                        <div class="card-avatar">A</div>
-                        <div class="card-info">
-                            <div class="project-title">Atmospheric Scrubber Hardware</div>
-                            <div class="project-meta">Hardware &bull; 1d ago</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="project-card">
-                    <div class="card-thumbnail"></div>
-                    <div class="card-details">
-                        <div class="card-avatar">Q</div>
-                        <div class="card-info">
-                            <div class="project-title">Quantum Fabric Sim Engine</div>
-                            <div class="project-meta">Research &bull; 5h ago</div>
-                        </div>
-                    </div>
-                </div>
+            <div class="project-grid" id="project-grid">
+                <!-- Data Hydrated from Firebase -->
             </div>
 
             <!-- Fullscreen Editor Mode Overlay -->
@@ -1145,7 +1160,6 @@
             if (initialPrompt) { updateWebsite(initialPrompt); dockPromptInput.value = initialPrompt; }
         }
 
-        projectCards.forEach(card => card.addEventListener('click', () => startEditorMode(card.querySelector('.project-title').textContent)));
         closeProjectView.addEventListener('click', () => {
             projectDetailView.classList.remove('active');
             websitePreview.srcdoc = "";
@@ -1175,6 +1189,69 @@
             const x = e.clientX - rect.left;
             editorDock.style.background = `linear-gradient(to top, rgba(30,30,32,0.95), rgba(40,40,42,0.95)), radial-gradient(circle at ${x}px 50%, rgba(255,255,255,0.08) 0%, transparent 60%)`;
         });
+
+        // --- Firebase Sycn & Screenshot Engine ---
+        const deployBtn = document.querySelector('.exit-editor:not(#close-project-view)');
+        deployBtn.addEventListener('click', async () => {
+            const title = prompt("Enter a title for your project:") || "Untitled Synthesis";
+            deployBtn.textContent = "Deploying...";
+
+            try {
+                // Take Screenshot
+                const canvas = await html2canvas(previewContainer, {
+                    useCORS: true,
+                    backgroundColor: null,
+                    scale: 0.5
+                });
+                const thumbnail = canvas.toDataURL('image/webp', 0.5);
+
+                await window.saveProjectToFirebase({
+                    title,
+                    html: websitePreview.srcdoc,
+                    thumbnail,
+                    prompts: promptHistory
+                });
+
+                deployBtn.textContent = "Deployed";
+                setTimeout(() => deployBtn.textContent = "Deploy", 2000);
+            } catch (e) {
+                console.error("Deploy Fault:", e);
+                deployBtn.textContent = "Error";
+            }
+        });
+
+        function populateGrid(projectsData) {
+            const grid = document.getElementById('project-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            if (!projectsData) return;
+
+            Object.entries(projectsData).reverse().forEach(([id, project]) => {
+                const card = document.createElement('div');
+                card.className = 'project-card';
+                card.innerHTML = `
+                    <div class="card-thumbnail" style="background-image: url(${project.thumbnail}); background-size: cover; background-position: center;"></div>
+                    <div class="card-details">
+                        <div class="card-avatar">${project.title[0].toUpperCase()}</div>
+                        <div class="card-info">
+                            <div class="project-title">${project.title}</div>
+                            <div class="project-meta">Synthesis &bull; ${new Date(project.timestamp).toLocaleDateString()}</div>
+                        </div>
+                    </div>
+                `;
+                card.addEventListener('click', () => {
+                    startEditorMode("");
+                    websitePreview.srcdoc = project.html;
+                    document.querySelector('.project-title').textContent = project.title;
+                });
+                grid.appendChild(card);
+            });
+        }
+
+        // Hydrate from Firebase
+        if (window.loadProjectsFromFirebase) {
+            window.loadProjectsFromFirebase(populateGrid);
+        }
     </script>
 </body>
 
