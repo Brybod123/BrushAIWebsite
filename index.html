@@ -1026,6 +1026,23 @@
                 return true;
             };
 
+            window.rewardWebsitePostCredits = async () => {
+                if (!window.currentUser) return;
+
+                const lastRewardRef = ref(db, `users/${window.currentUser.uid}/lastWebsitePostReward`);
+                const snapshot = await new Promise(resolve => onValue(lastRewardRef, resolve, { onlyOnce: true }));
+                const lastReward = snapshot.val() || 0;
+
+                const now = Date.now();
+                // 1 hour cooldown (3600000 ms)
+                if (now - lastReward >= 3600000) {
+                    await set(lastRewardRef, now);
+                    const creditsRef = ref(db, `users/${window.currentUser.uid}/credits`);
+                    runTransaction(creditsRef, (current) => (current || 0) + 15);
+                    alert("You earned 15 credits for posting your website!");
+                }
+            };
+
             window.likeProject = (projectId) => {
                 const likeRef = ref(db, `projects/${projectId}/likes`);
                 runTransaction(likeRef, (current) => (current || 0) + 1);
@@ -1633,6 +1650,10 @@
                     thumbnail,
                     prompts: promptHistory
                 });
+
+                if (window.rewardWebsitePostCredits) {
+                    await window.rewardWebsitePostCredits();
+                }
 
                 deployBtn.textContent = "Deployed";
                 setTimeout(() => deployBtn.textContent = "Deploy", 2000);
