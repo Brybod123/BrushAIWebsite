@@ -1759,19 +1759,29 @@
                 const card = document.createElement('div');
                 card.className = 'project-card';
                 
-                // Handle base64 thumbnails properly
+                // Handle thumbnails properly with better error handling
                 let thumbnailHtml = '';
+                let thumbnailSrc = thumbnail;
+                
                 if (thumbnail && thumbnail.startsWith('data:')) {
                     console.log('Processing base64 thumbnail for project:', title, 'Length:', thumbnail.length);
-                    // Use img tag for base64 data (more reliable than CSS background-image)
-                    thumbnailHtml = `<img src="${thumbnail}" alt="${title}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 16px;">`;
+                    thumbnailSrc = thumbnail;
+                } else if (thumbnail && thumbnail.includes('supabase.co')) {
+                    console.log('Processing Supabase thumbnail URL for project:', title);
+                    thumbnailSrc = thumbnail;
                 } else if (thumbnail) {
                     console.log('Processing regular thumbnail URL for project:', title);
-                    thumbnailHtml = `<img src="${thumbnail}" alt="${title}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 16px;">`;
+                    thumbnailSrc = thumbnail;
                 } else {
                     console.log('No thumbnail found for project:', title, 'Using fallback');
                     // Fallback gradient if no thumbnail
                     thumbnailHtml = `<div style="width: 100%; height: 100%; background: linear-gradient(135deg, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.1)); border-radius: 16px; display: flex; align-items: center; justify-content: center; color: rgba(0,0,0,0.3); font-size: 24px; font-weight: 600;">${avatar}</div>`;
+                }
+                
+                // Create img element with error handling
+                if (thumbnailSrc) {
+                    thumbnailHtml = `<img src="${thumbnailSrc}" alt="${title}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 16px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" onload="console.log('Thumbnail loaded successfully for ${title}');">
+                        <div style="display:none; width: 100%; height: 100%; background: linear-gradient(135deg, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.1)); border-radius: 16px; display: flex; align-items: center; justify-content: center; color: rgba(0,0,0,0.3); font-size: 24px; font-weight: 600;">${avatar}</div>`;
                 }
                 
                 card.innerHTML = `
