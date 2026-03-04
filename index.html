@@ -940,6 +940,20 @@
                     menuAvatar.style.background = photoUrl ? `url(${photoUrl}) center/cover` : "rgba(0,0,0,0.05)";
                     menuUsername.textContent = user.displayName || "User";
                     menuAuthBtn.title = "Sign Out";
+
+                    // Listen for credits
+                    const creditsRef = ref(db, `users/${user.uid}/credits`);
+                    onValue(creditsRef, (snapshot) => {
+                        const credits = snapshot.val();
+                        if (credits === null) {
+                            // Initialize new user with 1000 credits
+                            set(creditsRef, 1000);
+                            window.userCredits = 1000;
+                        } else {
+                            window.userCredits = credits;
+                            document.getElementById('menu-credits').textContent = `${credits.toLocaleString()} Credits`;
+                        }
+                    });
                 } else {
                     avatar.textContent = "?";
                     avatar.style.background = "rgba(0,0,0,0.1)";
@@ -947,7 +961,9 @@
                     menuAvatar.textContent = "?";
                     menuAvatar.style.background = "rgba(0,0,0,0.05)";
                     menuUsername.textContent = "Guest User";
+                    document.getElementById('menu-credits').textContent = "Sign in for credits";
                     menuAuthBtn.title = "Sign In";
+                    window.userCredits = 0;
                 }
             });
 
@@ -969,6 +985,21 @@
             window.incrementViews = (projectId) => {
                 const viewRef = ref(db, `projects/${projectId}/views`);
                 runTransaction(viewRef, (current) => (current || 0) + 1);
+            };
+
+            window.deductCredits = (amount) => {
+                if (!window.currentUser) return false;
+                if (window.userCredits < amount) return false;
+
+                const creditsRef = ref(db, `users/${window.currentUser.uid}/credits`);
+                runTransaction(creditsRef, (current) => {
+                    const currentCredits = current || 0;
+                    if (currentCredits >= amount) {
+                        return currentCredits - amount;
+                    }
+                    return; // Abort transaction if insufficient funds
+                });
+                return true;
             };
 
             window.likeProject = (projectId) => {
@@ -1034,11 +1065,19 @@
                             </svg>
                         </div>
                         <div class="dropdown-menu">
-                            <div class="model-option selected" data-model="openai-fast">GPT 5 Nano</div>
-                            <div class="model-option" data-model="grok">Grok 4 Fast</div>
-                            <div class="model-option" data-model="claude">Haiku 4.6</div>
-                            <div class="model-option" data-model="mistral">Mistral Small 24B</div>
-                            <div class="model-option" data-model="gemini">Gemini 3 Flash</div>
+                            <div class="model-option selected" data-model="openai-fast" data-cost="0">GPT 5 Nano <span
+                                    style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(Free)</span></div>
+                            <div class="model-option" data-model="grok" data-cost="5">Grok 4 Fast <span
+                                    style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(5 🪙)</span></div>
+                            <div class="model-option" data-model="claude" data-cost="0">Haiku 4.6 <span
+                                    style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(Free)</span></div>
+                            <div class="model-option" data-model="mistral" data-cost="0">Mistral Small 24B <span
+                                    style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(Free)</span></div>
+                            <div class="model-option" data-model="gemini" data-cost="25">Gemini 3 Flash <span
+                                    style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(25 🪙)</span></div>
+                            <div class="model-option" data-model="google/gemini-2.5-flash" data-cost="10">Gemini 3.1
+                                Flash Lite <span style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(10 🪙)</span>
+                            </div>
                         </div>
                     </div>
                     <textarea class="engraved-input" placeholder="Imagine your website here..."></textarea>
@@ -1142,11 +1181,19 @@
                             <polyline points="6 9 12 15 18 9"></polyline>
                         </svg>
                         <div class="dropdown-menu" id="dock-model-menu" style="bottom: 80px;">
-                            <div class="model-option selected" data-model="openai-fast">GPT 5 Nano</div>
-                            <div class="model-option" data-model="grok">Grok 4 Fast</div>
-                            <div class="model-option" data-model="claude">Haiku 4.6</div>
-                            <div class="model-option" data-model="mistral">Mistral Small 24B</div>
-                            <div class="model-option" data-model="gemini">Gemini 3 Flash</div>
+                            <div class="model-option selected" data-model="openai-fast" data-cost="0">GPT 5 Nano <span
+                                    style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(Free)</span></div>
+                            <div class="model-option" data-model="grok" data-cost="5">Grok 4 Fast <span
+                                    style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(5 🪙)</span></div>
+                            <div class="model-option" data-model="claude" data-cost="0">Haiku 4.6 <span
+                                    style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(Free)</span></div>
+                            <div class="model-option" data-model="mistral" data-cost="0">Mistral Small 24B <span
+                                    style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(Free)</span></div>
+                            <div class="model-option" data-model="gemini" data-cost="25">Gemini 3 Flash <span
+                                    style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(25 🪙)</span></div>
+                            <div class="model-option" data-model="google/gemini-2.5-flash" data-cost="10">Gemini 3.1
+                                Flash Lite <span style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(10 🪙)</span>
+                            </div>
                         </div>
                     </div>
                     <div class="dock-input-wrapper">
@@ -1395,6 +1442,33 @@
             previewContainer.classList.remove('blob-mode');
         }
 
+        async function attemptGeneration(prompt) {
+            if (!prompt) return;
+
+            const activeModelEl = dockMenu.querySelector('.model-option.selected') || dropdown.querySelector('.model-option.selected');
+            const cost = parseInt(activeModelEl?.getAttribute('data-cost') || "0");
+
+            if (cost > 0) {
+                if (!window.currentUser) {
+                    alert(`You must be signed in to use this model. It costs ${cost} credits.`);
+                    return;
+                }
+
+                if (window.userCredits < cost) {
+                    alert(`Insufficient credits! You need ${cost} credits but have ${window.userCredits}.`);
+                    return;
+                }
+
+                const success = window.deductCredits(cost);
+                if (!success) {
+                    alert("Failed to deduct credits.");
+                    return;
+                }
+            }
+
+            await updateWebsite(prompt);
+        }
+
         function startEditorMode(initialPrompt, isViewing = false) {
             projectDetailView.classList.add('active');
             projectDetailView.classList.toggle('viewer-mode', isViewing);
@@ -1424,7 +1498,7 @@
                 renderChat();
             }
 
-            if (initialPrompt && !isViewing) { updateWebsite(initialPrompt); dockPromptInput.value = initialPrompt; }
+            if (initialPrompt && !isViewing) { attemptGeneration(initialPrompt); dockPromptInput.value = initialPrompt; }
         }
 
         closeProjectView.addEventListener('click', () => {
@@ -1447,7 +1521,7 @@
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 const prompt = dockPromptInput.value.trim();
-                if (prompt) updateWebsite(prompt);
+                if (prompt) attemptGeneration(prompt);
             }
         });
 

@@ -3,13 +3,24 @@ const { stream } = require("@netlify/functions");
 exports.handler = stream(async (event) => {
     try {
         const { messages, model, stream: shouldStream } = JSON.parse(event.body);
+        const isOpenRouter = model && model.startsWith('google/');
         const API_KEY = process.env.POLLINATIONS_API_KEY;
+        const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
-        const response = await fetch('https://gen.pollinations.ai/v1/chat/completions', {
+        const endpoint = isOpenRouter
+            ? 'https://openrouter.ai/api/v1/chat/completions'
+            : 'https://gen.pollinations.ai/v1/chat/completions';
+
+        const authHeader = isOpenRouter
+            ? (OPENROUTER_API_KEY ? `Bearer ${OPENROUTER_API_KEY}` : undefined)
+            : (API_KEY ? `Bearer ${API_KEY}` : undefined);
+
+        const response = await fetch(endpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                ...(API_KEY && { 'Authorization': `Bearer ${API_KEY}` })
+                ...(authHeader && { 'Authorization': authHeader }),
+                ...(isOpenRouter && { 'HTTP-Referer': 'https://brushai.netlify.app' })
             },
             body: JSON.stringify({
                 model: model || 'openai-fast',
@@ -20,7 +31,7 @@ exports.handler = stream(async (event) => {
 
         if (!response.ok) {
             const errorMsg = await response.text();
-            console.error('Core Sync Failure:', errorMsg);
+            console.error('Remote API Failure:', errorMsg);
             return { statusCode: response.status, body: errorMsg };
         }
 
