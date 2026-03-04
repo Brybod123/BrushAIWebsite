@@ -849,23 +849,23 @@
 
         /* User Projects Drawer - Styled like Bottom Drawer */
         .user-projects-drawer {
-            position: fixed; /* Changed to fixed to avoid parent clipping */
+            position: fixed;
             top: 155px; 
-            left: 80px; /* Offset from sidebar */
+            right: 80px; /* Offset from right sidebar */
             width: 0;
             height: 0;
-            background: radial-gradient(circle at 0% 50%, var(--inner-light) 0%, var(--inner-base) 100%);
+            background: radial-gradient(circle at 100% 50%, var(--inner-light) 0%, var(--inner-base) 100%);
             border-radius: 20px;
             border: 1px solid rgba(0, 0, 0, 0.1);
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
             transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             flex-direction: column;
-            z-index: 10001; /* Ensure it's above everything */
+            z-index: 10001;
             overflow: hidden;
             opacity: 0;
             pointer-events: none;
-            transform-origin: left center; /* Explicitly expand from left */
+            transform-origin: right center; /* Expand to the LEFT */
         }
 
         .user-projects-drawer.expanded {
@@ -874,7 +874,7 @@
             opacity: 1;
             pointer-events: auto;
             padding: 20px;
-            overflow: visible; /* Allow content to be visible */
+            overflow: visible;
         }
 
         .user-projects-drawer .drawer-header {
