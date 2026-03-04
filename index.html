@@ -1124,8 +1124,111 @@
                 });
             };
 
+            // User project caching system
+            window.saveUserProject = async (projectData) => {
+                if (!window.currentUser) {
+                    console.error('Cannot save project: User not authenticated');
+                    return;
+                }
+
+                const userProjectsRef = ref(db, `users/${window.currentUser.uid}/projects`);
+                const newProjectRef = push(userProjectsRef);
+                
+                const projectToSave = {
+                    ...projectData,
+                    id: newProjectRef.key,
+                    lastModified: Date.now(),
+                    createdAt: Date.now()
+                };
+
+                await set(newProjectRef, projectToSave);
+                console.log('Project saved to user cache:', projectToSave.title);
+                
+                // Also save to localStorage for instant access
+                const cachedProjects = JSON.parse(localStorage.getItem('userProjects') || '[]');
+                cachedProjects.unshift(projectToSave);
+                localStorage.setItem('userProjects', JSON.stringify(cachedProjects.slice(0, 20))); // Keep last 20 projects
+            };
+
+            window.loadUserProjects = () => {
+                if (!window.currentUser) return [];
+
+                // Try localStorage first for instant access
+                const cachedProjects = JSON.parse(localStorage.getItem('userProjects') || '[]');
+                if (cachedProjects.length > 0) {
+                    console.log('Loaded projects from cache:', cachedProjects.length);
+                    return cachedProjects;
+                }
+
+                // Fallback to Firebase
+                const userProjectsRef = ref(db, `users/${window.currentUser.uid}/projects`);
+                return new Promise((resolve) => {
+                    onValue(userProjectsRef, (snapshot) => {
+                        const projects = snapshot.val() ? Object.values(snapshot.val()) : [];
+                        // Sort by lastModified
+                        projects.sort((a, b) => (b.lastModified || 0) - (a.lastModified || 0));
+                        
+                        // Update localStorage cache
+                        localStorage.setItem('userProjects', JSON.stringify(projects.slice(0, 20)));
+                        resolve(projects);
+                    }, { onlyOnce: true });
+                });
+            };
+
+            window.resumeProject = async (project) => {
+                console.log('Resuming project:', project.title);
+                
+                // Load project data into editor
+                if (project.html) {
+                    websitePreview.srcdoc = project.html;
+                }
+                
+                if (project.prompts && Array.isArray(project.prompts)) {
+                    promptHistory = [...project.prompts];
+                    renderHistory();
+                }
+                
+                // Switch to editor mode
+                startEditorMode(project.html || '', false);
+                
+                // Update UI
+                document.getElementById('viewer-title-display').textContent = project.title;
+            };
+
             // Start Hydration
             window.loadProjectsFromFirebase(window.populateGrid);
+            
+            // Load and display recent projects for authenticated users
+            if (window.currentUser) {
+                window.loadUserProjects().then(projects => {
+                    const recentProjectsList = document.getElementById('recent-projects-list');
+                    if (recentProjectsList && projects.length > 0) {
+                        recentProjectsList.innerHTML = projects.slice(0, 5).map((project, index) => `
+                            <div class="recent-project-item" onclick="window.resumeProject(${JSON.stringify(project).replace(/"/g, '&quot;')})" style="cursor: pointer; padding: 8px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); transition: all 0.2s;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    ${project.thumbnail ? `<img src="${project.thumbnail}" style="width: 30px; height: 30px; border-radius: 6px; object-fit: cover;">` : `<div style="width: 30px; height: 30px; border-radius: 6px; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; font-weight: 600;">${project.title[0]?.toUpperCase() || 'P'}</div>`}
+                                    <div style="flex: 1; min-width: 0;">
+                                        <div style="color: #fff; font-size: 11px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${project.title}</div>
+                                        <div style="color: rgba(255,255,255,0.5); font-size: 9px; margin-top: 2px;">${new Date(project.lastModified).toLocaleDateString()}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('');
+                        
+                        // Add hover effect
+                        recentProjectsList.querySelectorAll('.recent-project-item').forEach(item => {
+                            item.addEventListener('mouseenter', () => {
+                                item.style.backgroundColor = 'rgba(255,255,255,0.1)';
+                            });
+                            item.addEventListener('mouseleave', () => {
+                                item.style.backgroundColor = 'transparent';
+                            });
+                        });
+                    } else {
+                        recentProjectsList.innerHTML = '<div style="padding: 20px; text-align: center; color: rgba(255,255,255,0.5); font-size: 11px;">No recent projects</div>';
+                    }
+                });
+            }
         }
 
         initFirebase();
@@ -1135,6 +1238,16 @@
         <aside class="sidebar">
             <div class="logo-container">
                 <div class="logo-text">B<span>r</span></div>
+            </div>
+            
+            <!-- Recent Projects Section -->
+            <div class="recent-projects" id="recent-projects" style="margin-top: 20px;">
+                <div style="padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <div style="color: #fff; font-size: 12px; font-weight: 600; margin-bottom: 10px; opacity: 0.7;">RECENT PROJECTS</div>
+                </div>
+                <div id="recent-projects-list" style="max-height: 300px; overflow-y: auto;">
+                    <!-- Recent projects will be injected here -->
+                </div>
             </div>
             <div class="nav-items-top">
                 <div class="nav-item" title="Folder"><svg viewBox="0 0 24 24">
@@ -1773,6 +1886,14 @@
                 console.log('Thumbnail generated, length:', thumbnail.length);
 
                 await window.saveProjectToFirebase({
+                    title,
+                    html: websitePreview.srcdoc,
+                    thumbnail,
+                    prompts: promptHistory
+                });
+
+                // Also save to user cache for instant resumption
+                await window.saveUserProject({
                     title,
                     html: websitePreview.srcdoc,
                     thumbnail,
