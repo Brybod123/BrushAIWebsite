@@ -445,6 +445,47 @@
             display: flex;
             flex-direction: column;
             border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.8s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        /* Blob Metamorphosis */
+        .preview-container.blob-mode {
+            flex: 0 0 450px;
+            height: 450px;
+            border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+            margin: auto;
+            align-self: center;
+            animation: blobWave 5s ease-in-out infinite alternate;
+            box-shadow: 0 0 100px rgba(255, 255, 255, 0.1), 0 50px 120px rgba(0, 0, 0, 0.8);
+            transform: scale(0.9);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .preview-container.blob-mode .preview-frame {
+            opacity: 0.1;
+            /* Fade preview slightly during generation blob phase */
+        }
+
+        @keyframes blobWave {
+            0% {
+                border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+                transform: scale(0.95);
+            }
+
+            33% {
+                border-radius: 60% 40% 30% 70% / 50% 60% 40% 60%;
+                transform: scale(1.05) rotate(5deg);
+            }
+
+            66% {
+                border-radius: 30% 70% 40% 60% / 60% 40% 60% 40%;
+                transform: scale(0.9) rotate(-5deg);
+            }
+
+            100% {
+                border-radius: 50% 50% 50% 50% / 50% 50% 50% 50%;
+                transform: scale(1);
+            }
         }
 
         .preview-frame {
@@ -818,6 +859,7 @@
         const projectDetailView = document.getElementById('project-detail-view');
         const closeProjectView = document.getElementById('close-project-view');
         const websitePreview = document.getElementById('website-preview');
+        const previewContainer = document.querySelector('.preview-container');
         const dockPromptInput = document.getElementById('dock-prompt-input');
         const editorDock = document.getElementById('editor-dock');
         const homePromptInput = document.querySelector('.engraved-input');
@@ -956,6 +998,7 @@
         async function updateWebsite(prompt) {
             if (!prompt) return;
             editorDock.classList.add('streaming');
+            if (currentMode === 'agent') previewContainer.classList.add('blob-mode');
 
             const modelId = dockMenu.querySelector('.model-option.selected')?.getAttribute('data-model') || 'openai-fast';
 
@@ -1001,6 +1044,7 @@
             }
 
             editorDock.classList.remove('streaming');
+            previewContainer.classList.remove('blob-mode');
         }
 
         function startEditorMode(initialPrompt) {
