@@ -494,6 +494,69 @@
             height: 100%;
             border: none;
             background: white;
+            display: block;
+        }
+
+        /* Chat Window Overlay */
+        .chat-window {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            background: #0a0a0b;
+            display: none;
+            flex-direction: column;
+            padding: 40px;
+            overflow-y: auto;
+            color: #fff;
+            gap: 20px;
+            font-family: 'Inter', sans-serif;
+            scrollbar-width: none;
+        }
+
+        .chat-window::-webkit-scrollbar {
+            display: none;
+        }
+
+        .chat-message {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 20px;
+            border-radius: 25px;
+            line-height: 1.6;
+            max-width: 85%;
+            animation: slideUp 0.4s ease-out;
+        }
+
+        .chat-message.user {
+            align-self: flex-end;
+            background: rgba(255, 255, 255, 0.08);
+            border-bottom-right-radius: 5px;
+        }
+
+        .chat-message.ai {
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
+            border-left: 2px solid #00ff88;
+        }
+
+        .preview-container.mode-chat .preview-frame {
+            display: none;
+        }
+
+        .preview-container.mode-chat .chat-window {
+            display: flex;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         /* Floating Command Dock */
@@ -776,8 +839,11 @@
                     <aside class="history-sidebar" id="history-sidebar">
                         <!-- History items injected here -->
                     </aside>
-                    <div class="preview-container">
+                    <div class="preview-container" id="preview-island">
                         <iframe class="preview-frame" id="website-preview" src="about:blank"></iframe>
+                        <div class="chat-window" id="chat-view">
+                            <!-- Chat messages live here -->
+                        </div>
                     </div>
                 </main>
 
@@ -861,7 +927,8 @@
         const projectDetailView = document.getElementById('project-detail-view');
         const closeProjectView = document.getElementById('close-project-view');
         const websitePreview = document.getElementById('website-preview');
-        const previewContainer = document.querySelector('.preview-container');
+        const previewContainer = document.getElementById('preview-island');
+        const chatView = document.getElementById('chat-view');
         const dockPromptInput = document.getElementById('dock-prompt-input');
         const editorDock = document.getElementById('editor-dock');
         const homePromptInput = document.querySelector('.engraved-input');
@@ -883,15 +950,20 @@
                     div.innerHTML = `<span>Version ${index + 1}</span>${item}`;
                     historySidebar.appendChild(div);
                 });
-            } else {
-                if (chatHistory) {
-                    const div = document.createElement('div');
-                    div.className = 'history-item';
-                    div.innerHTML = `<span>Chat Session</span>${chatHistory}`;
-                    historySidebar.appendChild(div);
-                }
             }
             historySidebar.scrollTop = historySidebar.scrollHeight;
+        }
+
+        function renderChat() {
+            if (!chatView) return;
+            chatView.innerHTML = '';
+            messageStack.slice(1).forEach(msg => {
+                const div = document.createElement('div');
+                div.className = `chat-message ${msg.role === 'user' ? 'user' : 'ai'}`;
+                div.textContent = msg.content;
+                chatView.appendChild(div);
+            });
+            chatView.scrollTop = chatView.scrollHeight;
         }
 
         // Type Selector Logic
@@ -912,6 +984,9 @@
                 typeOptions.forEach(o => o.classList.remove('selected'));
                 opt.classList.add('selected');
                 typeMenu.style.display = 'none';
+
+                // Toggle Container Mode
+                previewContainer.classList.toggle('mode-chat', currentMode === 'chat');
                 renderHistory();
             });
         });
@@ -1020,26 +1095,24 @@
                     doc.close();
                 }
             } else {
-                let currentChatBlock = "";
                 messageStack.push({ role: 'user', content: prompt });
+                renderChat();
                 try {
                     const finalChat = await streamAIResponse(messageStack, modelId, (full) => {
-                        currentChatBlock = full;
-                        const tempHistory = chatHistory + (chatHistory ? "<br><br>" : "") + "<b>User:</b> " + prompt + "<br><b>AI:</b> " + currentChatBlock;
-                        const div = historySidebar.querySelector('.history-item:last-child') || document.createElement('div');
-                        if (!historySidebar.contains(div)) {
-                            div.className = 'history-item';
-                            historySidebar.appendChild(div);
+                        // For streaming chat, we temporarily update the last AI message
+                        const lastMsg = chatView.querySelector('.chat-message.ai:last-child') || document.createElement('div');
+                        if (!chatView.contains(lastMsg)) {
+                            lastMsg.className = 'chat-message ai';
+                            chatView.appendChild(lastMsg);
                         }
-                        div.innerHTML = `<span>Live Chat</span>${tempHistory}`;
-                        historySidebar.scrollTop = historySidebar.scrollHeight;
+                        lastMsg.textContent = full;
+                        chatView.scrollTop = chatView.scrollHeight;
                     });
                     messageStack.push({ role: 'assistant', content: finalChat });
-                    chatHistory += (chatHistory ? "<br><br>" : "") + "<b>User:</b> " + prompt + "<br><b>AI:</b> " + currentChatBlock;
-                    renderHistory();
+                    renderChat();
                 } catch (e) {
-                    chatHistory += "<br><br><b>Error:</b> Synthesis sync lost.";
-                    renderHistory();
+                    messageStack.push({ role: 'assistant', content: "Synthesis sync lost." });
+                    renderChat();
                 }
             }
 
@@ -1064,8 +1137,10 @@
             // Start fresh history
             promptHistory = [];
             chatHistory = "";
+            chatView.innerHTML = "";
             messageStack = [{ role: 'system', content: 'You are a professional HTML/CSS generator for BrushAI. Output ONLY raw HTML/CSS code. No explainers, no markdown tags. Just pure code. Follow previous context to edit the existing site if requested.' }];
             renderHistory();
+            renderChat();
 
             if (initialPrompt) { updateWebsite(initialPrompt); dockPromptInput.value = initialPrompt; }
         }
