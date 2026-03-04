@@ -7,6 +7,7 @@
     <title>BrushAI - Premium AI Website Interface</title>
     <meta name="description" content="A premium, floating pill-based AI website editor with a brushed metal aesthetic.">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --outer-base: #0a0a0b;
@@ -716,8 +717,23 @@
         }
 
         .project-view.viewer-mode .dock-input-wrapper,
-        .project-view.viewer-mode .dock-model-selector {
+        .project-view.viewer-mode .dock-model-selector,
+        .project-view.viewer-mode #deploy-btn {
+            display: none !important;
+        }
+
+        #viewer-title-display {
             display: none;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            font-size: 16px;
+            font-weight: 700;
+            color: rgba(0, 0, 0, 0.8);
+        }
+
+        .project-view.viewer-mode #viewer-title-display {
+            display: flex !important;
         }
 
         .social-actions {
@@ -1143,7 +1159,8 @@
                     <!-- Social Actions (Lighter View Mode) -->
                     <div class="social-actions" id="social-dock-actions">
                         <div class="social-btn" id="like-trigger">
-                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                                stroke-width="2.5">
                                 <path
                                     d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z">
                                 </path>
@@ -1151,7 +1168,8 @@
                             <span id="like-count">0</span>
                         </div>
                         <div class="social-btn">
-                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                                stroke-width="2.5">
                                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                                 <circle cx="12" cy="12" r="3"></circle>
                             </svg>
@@ -1181,31 +1199,36 @@
                         <svg class="dropdown-arrow" viewBox="0 0 24 24" width="16" height="16">
                             <polyline points="6 9 12 15 18 9"></polyline>
                         </svg>
-                        <div class="dropdown-menu" id="dock-model-menu" style="bottom: 80px;">
+                        <div class="dropdown-menu">
                             <div class="model-option selected" data-model="openai-fast" data-cost="0">GPT 5 Nano <span
                                     style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(Free)</span></div>
                             <div class="model-option" data-model="grok" data-cost="5">Grok 4 Fast <span
-                                    style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(5 🪙)</span></div>
+                                    style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(5 <i
+                                        class="fa-solid fa-brush"></i>)</span></div>
                             <div class="model-option" data-model="claude" data-cost="0">Haiku 4.5 <span
                                     style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(Free)</span></div>
                             <div class="model-option" data-model="mistral" data-cost="0">Mistral Small 24B <span
                                     style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(Free)</span></div>
                             <div class="model-option" data-model="gemini" data-cost="25">Gemini 3 Flash <span
-                                    style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(25 🪙)</span></div>
+                                    style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(25 <i
+                                        class="fa-solid fa-brush"></i>)</span></div>
                             <div class="model-option" data-model="google/gemini-2.5-flash" data-cost="15">Gemini 2.5
-                                Flash <span style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(15 🪙)</span>
+                                Flash <span style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(15 <i
+                                        class="fa-solid fa-brush"></i>)</span>
                             </div>
                             <div class="model-option" data-model="google/gemini-3.1-flash-lite-preview" data-cost="10">
                                 Gemini 3.1
-                                Flash Lite <span style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(10 🪙)</span>
+                                Flash Lite <span style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(10 <i
+                                        class="fa-solid fa-brush"></i>)</span>
                             </div>
                         </div>
                     </div>
                     <div class="dock-input-wrapper">
                         <input type="text" class="dock-prompt" id="dock-prompt-input" placeholder="Synthesis prompt...">
                     </div>
+                    <div id="viewer-title-display">Project Title</div>
                     <div style="display: flex; gap: 10px;">
-                        <button class="exit-editor"
+                        <button class="exit-editor" id="deploy-btn"
                             style="background: rgba(255,255,255,0.05); color: #fff; border-radius: 20px; width: auto; padding: 0 25px; border: 1px solid rgba(255,255,255,0.1); font-size: 13px; font-weight: 700;">Deploy</button>
                         <div class="exit-editor" id="close-project-view" title="Exit Editor"
                             style="width: 50px; height: 50px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: #fff; border-radius: 25px;">
@@ -1585,7 +1608,7 @@
                 const card = document.createElement('div');
                 card.className = 'project-card';
                 card.innerHTML = `
-                    <div class="card-thumbnail" style="background-image: url(${thumbnail}); background-size: cover; background-position: center;"></div>
+                    <div class="card-thumbnail" style="background-image: url('${thumbnail}'); background-size: cover; background-position: center;"></div>
                     <div class="card-details">
                         <div class="card-avatar">${avatar}</div>
                         <div class="card-info">
@@ -1623,6 +1646,10 @@
                         if (window.likeProject) window.likeProject(id);
                         document.getElementById('like-count').textContent = (project.likes || 0) + 1;
                     };
+
+                    // Setup View Mode Title
+                    const viewerTitleDisplay = document.getElementById('viewer-title-display');
+                    if (viewerTitleDisplay) viewerTitleDisplay.textContent = title;
 
                     const editorTitle = document.getElementById('project-editor-title');
                     if (editorTitle) editorTitle.textContent = title;
