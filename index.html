@@ -542,8 +542,15 @@
             display: none;
         }
 
-        .loading .dock-loading {
+        .streaming .dock-loading {
             display: block;
+            border-top-color: #00ff88;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+        }
+
+        .streaming .dock-input-wrapper {
+            border-color: rgba(0, 255, 136, 0.1);
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.05);
         }
 
         .exit-editor {
@@ -746,11 +753,17 @@
                         </div>
                     </div>
 
-                    <div class="dock-model-selector" id="dock-model-dropdown">
+                    <div class="dock-model-selector" id="dock-model-trigger">
                         <span id="dock-selected-model">OpenAI Fast</span>
                         <svg class="dropdown-arrow" viewBox="0 0 24 24" width="16" height="16">
                             <polyline points="6 9 12 15 18 9"></polyline>
                         </svg>
+                        <div class="dropdown-menu" id="dock-model-menu" style="bottom: 80px;">
+                            <div class="model-option selected" data-model="openai-fast">OpenAI Fast</div>
+                            <div class="model-option" data-model="claude">Claude High</div>
+                            <div class="model-option" data-model="mistral">Mistral AI</div>
+                            <div class="model-option" data-model="gemini">Gemini Core</div>
+                        </div>
                     </div>
                     <div class="dock-input-wrapper">
                         <input type="text" class="dock-prompt" id="dock-prompt-input" placeholder="Synthesis prompt...">
@@ -858,55 +871,117 @@
             });
         });
 
-        async function fetchAIResponse(prompt, model, retries = 1) {
+        // Dock Model Selector Logic
+        const dockTrigger = document.getElementById('dock-model-trigger');
+        const dockMenu = document.getElementById('dock-model-menu');
+        const dockOptions = dockMenu.querySelectorAll('.model-option');
+
+        dockTrigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dockMenu.style.display = dockMenu.style.display === 'flex' ? 'none' : 'flex';
+        });
+
+        dockOptions.forEach(opt => {
+            opt.addEventListener('click', (e) => {
+                e.stopPropagation();
+                document.getElementById('dock-selected-model').textContent = opt.textContent;
+                dockOptions.forEach(o => o.classList.remove('selected'));
+                opt.classList.add('selected');
+                dockMenu.style.display = 'none';
+            });
+        });
+
+        document.addEventListener('click', () => {
+            typeMenu.style.display = 'none';
+            dockMenu.style.display = 'none';
+        });
+
+        async function streamAIResponse(prompt, model, callback) {
             try {
-                // Routing back through Netlify Proxy to use secure API keys
-                const response = await fetch('/.netlify/functions/chat', {
+                // Using the direct open-stream endpoint to bypass Netlify 10s limits
+                const response = await fetch('https://text.pollinations.ai/', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt, model })
+                    body: JSON.stringify({
+                        messages: [
+                            { role: 'system', content: 'You are a professional HTML/CSS generator for BrushAI. Output ONLY raw HTML/CSS code. No explainers, no markdown tags. Just pure code.' },
+                            { role: 'user', content: prompt }
+                        ],
+                        model: model || 'openai-fast',
+                        stream: true,
+                        code: true
+                    })
                 });
 
-                if (!response.ok) {
-                    if (response.status >= 500 && retries > 0) {
-                        console.warn('Synthesis delayed - Engaging Stabilizers');
-                        return fetchAIResponse(prompt, model, retries - 1);
-                    }
-                    throw new Error(`Synthesis error: ${response.status}`);
+                if (!response.ok) throw new Error(`Synthesis error: ${response.status}`);
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let fullContent = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value);
+                    fullContent += chunk;
+                    if (callback) callback(fullContent, chunk);
                 }
-                const data = await response.json();
-                return data.choices[0].message.content;
+                return fullContent;
             } catch (error) {
-                console.error('Synthesis Fault:', error);
-                const errorType = error.message.includes('502') || error.message.includes('504') ? 'Timeout' : 'Failure';
-                return `<div style="background:#0a0a0b; color:#ff4d4d; padding:40px; font-family:sans-serif; height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
-                            <h1 style="font-size:64px; margin-bottom:10px;">X</h1>
-                            <h2 style="font-size:24px; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:10px;">Synthesis ${errorType}</h2>
-                            <p style="opacity:0.6; max-width:400px; margin-top:10px; font-size:14px;">The AI core lost sync. This usually happens with massive prompts that exceed the 10s synthesis limit.</p>
-                            <div style="margin-top:30px; display:flex; gap:10px;">
-                                <button onclick="location.reload()" style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#fff; padding:10px 20px; border-radius:20px; cursor:pointer;">Cold Boot</button>
-                            </div>
-                        </div>`;
+                console.error('Synthesis Sync Lost:', error);
+                throw error;
             }
         }
 
         async function updateWebsite(prompt) {
             if (!prompt) return;
-            editorDock.classList.add('loading');
+            editorDock.classList.add('streaming');
 
-            const modelId = 'openai-fast';
-            const aiResponse = await fetchAIResponse(prompt, modelId);
+            const modelId = dockMenu.querySelector('.model-option.selected')?.getAttribute('data-model') || 'openai-fast';
 
             if (currentMode === 'agent') {
                 promptHistory.push(prompt);
+                renderHistory();
+
                 const doc = websitePreview.contentDocument || websitePreview.contentWindow.document;
-                doc.open(); doc.write(aiResponse); doc.close();
+                doc.open();
+
+                try {
+                    await streamAIResponse(prompt, modelId, (full) => {
+                        // For streaming HTML, we need to be careful. doc.write handles incremental chunks beautifully.
+                        // However, to ensure a clean re-render on each substantial update, we can refresh the view.
+                        // Using srcdoc for the final state is better for stability.
+                        websitePreview.srcdoc = full;
+                    });
+                } catch (e) {
+                    doc.write(`<div style="color:red; background:#000; padding:20px;">Synthesis Error: ${e.message}</div>`);
+                    doc.close();
+                }
             } else {
-                chatHistory += (chatHistory ? "<br><br>" : "") + "<b>User:</b> " + prompt + "<br><b>AI:</b> " + aiResponse.substring(0, 500) + (aiResponse.length > 500 ? "..." : "");
+                let currentChatBlock = "";
+                try {
+                    await streamAIResponse(prompt, modelId, (full) => {
+                        currentChatBlock = full;
+                        // Temp store to chatHistory for render
+                        const tempHistory = chatHistory + (chatHistory ? "<br><br>" : "") + "<b>User:</b> " + prompt + "<br><b>AI:</b> " + currentChatBlock;
+                        const div = historySidebar.querySelector('.history-item:last-child') || document.createElement('div');
+                        if (!historySidebar.contains(div)) {
+                            div.className = 'history-item';
+                            historySidebar.appendChild(div);
+                        }
+                        div.innerHTML = `<span>Live Chat</span>${tempHistory}`;
+                        historySidebar.scrollTop = historySidebar.scrollHeight;
+                    });
+                    chatHistory += (chatHistory ? "<br><br>" : "") + "<b>User:</b> " + prompt + "<br><b>AI:</b> " + currentChatBlock;
+                    renderHistory();
+                } catch (e) {
+                    chatHistory += "<br><br><b>Error:</b> Synthesis sync lost.";
+                    renderHistory();
+                }
             }
 
-            renderHistory();
-            editorDock.classList.remove('loading');
+            editorDock.classList.remove('streaming');
         }
 
         function startEditorMode(initialPrompt) {
@@ -920,7 +995,13 @@
         }
 
         projectCards.forEach(card => card.addEventListener('click', () => startEditorMode(card.querySelector('.project-title').textContent)));
-        closeProjectView.addEventListener('click', () => { projectDetailView.classList.remove('active'); websitePreview.src = "about:blank"; dockPromptInput.value = ""; });
+        closeProjectView.addEventListener('click', () => {
+            projectDetailView.classList.remove('active');
+            websitePreview.srcdoc = "";
+            websitePreview.src = "about:blank";
+            dockPromptInput.value = "";
+            editorDock.classList.remove('streaming');
+        });
 
         homePromptInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
