@@ -1680,8 +1680,25 @@
 
                 const card = document.createElement('div');
                 card.className = 'project-card';
+                
+                // Handle base64 thumbnails properly
+                let thumbnailStyle = '';
+                if (thumbnail && thumbnail.startsWith('data:')) {
+                    console.log('Processing base64 thumbnail for project:', title, 'Length:', thumbnail.length);
+                    // Escape the base64 data properly for HTML
+                    const escapedThumbnail = thumbnail.replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+                    thumbnailStyle = `background-image: url('${escapedThumbnail}'); background-size: cover; background-position: center;`;
+                } else if (thumbnail) {
+                    console.log('Processing regular thumbnail URL for project:', title);
+                    thumbnailStyle = `background-image: url('${thumbnail}'); background-size: cover; background-position: center;`;
+                } else {
+                    console.log('No thumbnail found for project:', title, 'Using fallback');
+                    // Fallback gradient if no thumbnail
+                    thumbnailStyle = 'background: linear-gradient(135deg, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.1));';
+                }
+                
                 card.innerHTML = `
-                    <div class="card-thumbnail" style="background-image: url('${thumbnail}'); background-size: cover; background-position: center;"></div>
+                    <div class="card-thumbnail" style="${thumbnailStyle}"></div>
                     <div class="card-details">
                         <div class="card-avatar">${avatar}</div>
                         <div class="card-info">
