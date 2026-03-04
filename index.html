@@ -790,6 +790,9 @@
                 callback(data);
             });
         };
+
+        // Trigger initial hydration from within the module to avoid race conditions
+        window.loadProjectsFromFirebase(window.populateGrid);
     </script>
 
     <main class="inner-panel" id="inner-surface">
@@ -1224,34 +1227,54 @@
             const grid = document.getElementById('project-grid');
             if (!grid) return;
             grid.innerHTML = '';
-            if (!projectsData) return;
+
+            if (!projectsData || Object.keys(projectsData).length === 0) {
+                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 100px; color: rgba(0,0,0,0.3); font-weight: 600;">No projects found. Start a new synthesis below.</div>';
+                return;
+            }
 
             Object.entries(projectsData).reverse().forEach(([id, project]) => {
+                if (!project) return;
+                const title = project.title || "Untitled Synthesis";
+                const thumbnail = project.thumbnail || "";
+                const avatar = title[0].toUpperCase();
+
                 const card = document.createElement('div');
                 card.className = 'project-card';
                 card.innerHTML = `
-                    <div class="card-thumbnail" style="background-image: url(${project.thumbnail}); background-size: cover; background-position: center;"></div>
+                    <div class="card-thumbnail" style="background-image: url(${thumbnail}); background-size: cover; background-position: center;"></div>
                     <div class="card-details">
-                        <div class="card-avatar">${project.title[0].toUpperCase()}</div>
+                        <div class="card-avatar">${avatar}</div>
                         <div class="card-info">
-                            <div class="project-title">${project.title}</div>
-                            <div class="project-meta">Synthesis &bull; ${new Date(project.timestamp).toLocaleDateString()}</div>
+                            <div class="project-title">${title}</div>
+                            <div class="project-meta">Synthesis &bull; ${project.timestamp ? new Date(project.timestamp).toLocaleDateString() : 'Recent'}</div>
                         </div>
                     </div>
                 `;
                 card.addEventListener('click', () => {
                     startEditorMode("");
-                    websitePreview.srcdoc = project.html;
-                    document.querySelector('.project-title').textContent = project.title;
+
+                    // Restore Context
+                    websitePreview.srcdoc = project.html || "";
+                    if (project.prompts) {
+                        promptHistory = [...project.prompts];
+                        // Reconstruct messageStack: System + each prompt as User + the final code as Assistant (simplified)
+                        messageStack = [{ role: 'system', content: 'You are a professional HTML/CSS generator for BrushAI. Output ONLY raw HTML/CSS code. No explainers, no markdown tags. Just pure code. Follow previous context to edit the existing site if requested.' }];
+                        project.prompts.forEach(p => messageStack.push({ role: 'user', content: p }));
+                        messageStack.push({ role: 'assistant', content: project.html || "" });
+                        renderHistory();
+                    }
+
+                    const editorTitle = document.getElementById('project-editor-title');
+                    if (editorTitle) editorTitle.textContent = title;
+                    document.querySelector('.project-title').textContent = title;
                 });
                 grid.appendChild(card);
             });
         }
 
-        // Hydrate from Firebase
-        if (window.loadProjectsFromFirebase) {
-            window.loadProjectsFromFirebase(populateGrid);
-        }
+        // Expose to window so module can call it
+        window.populateGrid = populateGrid;
     </script>
 </body>
 
