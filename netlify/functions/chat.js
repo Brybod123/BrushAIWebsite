@@ -52,7 +52,7 @@ exports.handler = stream(async (event) => {
                 model: model || 'openai-fast',
                 messages: messages,
                 stream: !!shouldStream,
-                max_tokens: shouldStream ? 500 : 1000, // Limit tokens to prevent timeouts
+                max_tokens: 4000,
                 temperature: 0.7
             }),
             signal: controller.signal
