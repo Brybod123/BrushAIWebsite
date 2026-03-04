@@ -120,6 +120,100 @@
             z-index: 20;
         }
 
+        /* Profile Menu Dock */
+        .profile-menu {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%) translateY(120%);
+            width: 500px;
+            height: 100px;
+            background: rgba(30, 30, 32, 0.85);
+            backdrop-filter: blur(50px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            padding: 0 35px;
+            gap: 25px;
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.5);
+            transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .profile-menu.active {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .profile-avatar-large {
+            width: 64px;
+            height: 64px;
+            border-radius: 32px;
+            background: rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 800;
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .profile-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .profile-name {
+            color: #fff;
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .profile-credits {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+        }
+
+        .profile-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .profile-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 22px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .profile-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .profile-btn svg {
+            width: 20px;
+            height: 20px;
+            stroke-width: 2;
+        }
+
         .logo-container {
             width: 44px;
             height: 44px;
@@ -829,12 +923,29 @@
             onAuthStateChanged(auth, (user) => {
                 window.currentUser = user;
                 const avatar = document.getElementById('user-avatar');
+                const menuAvatar = document.getElementById('menu-avatar');
+                const menuUsername = document.getElementById('menu-username');
+                const menuAuthBtn = document.getElementById('menu-auth-btn');
+
                 if (user) {
-                    avatar.textContent = user.displayName[0];
-                    avatar.style.background = `url(${user.photoURL}) center/cover`;
+                    const photoUrl = user.photoURL || "";
+                    const initial = user.displayName ? user.displayName[0] : "?";
+
+                    avatar.textContent = photoUrl ? "" : initial;
+                    avatar.style.background = photoUrl ? `url(${photoUrl}) center/cover` : "rgba(0,0,0,0.1)";
+
+                    menuAvatar.textContent = photoUrl ? "" : initial;
+                    menuAvatar.style.background = photoUrl ? `url(${photoUrl}) center/cover` : "rgba(255,255,255,0.05)";
+                    menuUsername.textContent = user.displayName || "User";
+                    menuAuthBtn.title = "Sign Out";
                 } else {
                     avatar.textContent = "?";
                     avatar.style.background = "rgba(0,0,0,0.1)";
+
+                    menuAvatar.textContent = "?";
+                    menuAvatar.style.background = "rgba(255,255,255,0.05)";
+                    menuUsername.textContent = "Guest User";
+                    menuAuthBtn.title = "Sign In";
                 }
             });
 
@@ -895,12 +1006,9 @@
                         <circle cx="12" cy="12" r="10"></circle>
                         <polyline points="12 6 12 12 16 14"></polyline>
                     </svg></div>
-            </div>
-
-            <div class="nav-items-bottom" style="margin-top: auto; padding-bottom: 20px;">
                 <div class="nav-item" id="auth-trigger" title="Account">
                     <div class="user-avatar" id="user-avatar"
-                        style="width: 32px; height: 32px; border-radius: 50%; background: rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: rgba(0,0,0,0.5);">
+                        style="width: 30px; height: 30px; border-radius: 50%; background: rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: rgba(0,0,0,0.5);">
                         ?</div>
                 </div>
             </div>
@@ -935,6 +1043,33 @@
                 </div>
             </div>
         </aside>
+
+        <div class="profile-menu" id="profile-menu">
+            <div class="profile-avatar-large" id="menu-avatar">?</div>
+            <div class="profile-info">
+                <div class="profile-name" id="menu-username">Guest User</div>
+                <div class="profile-credits" id="menu-credits">1,000 Credits</div>
+            </div>
+            <div class="profile-actions">
+                <div class="profile-btn" title="Settings">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path
+                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                        </path>
+                    </svg>
+                </div>
+                <div class="profile-btn" id="menu-auth-btn" title="Sign Out">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                </div>
+            </div>
+        </div>
 
         <section class="main-content">
             <div class="project-grid" id="project-grid">
@@ -1416,11 +1551,29 @@
             });
         }
 
-        document.getElementById('auth-trigger').addEventListener('click', () => {
+        const profileMenu = document.getElementById('profile-menu');
+        const authTrigger = document.getElementById('auth-trigger');
+
+        authTrigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            profileMenu.classList.toggle('active');
+        });
+
+        document.getElementById('menu-auth-btn').addEventListener('click', () => {
             if (window.currentUser) {
-                if (confirm("Sign out?")) window.signOut();
+                if (confirm("Sign out?")) {
+                    window.signOut();
+                    profileMenu.classList.remove('active');
+                }
             } else {
                 window.signIn();
+                profileMenu.classList.remove('active');
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!profileMenu.contains(e.target) && !authTrigger.contains(e.target)) {
+                profileMenu.classList.remove('active');
             }
         });
 
