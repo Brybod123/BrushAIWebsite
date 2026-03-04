@@ -1,6 +1,9 @@
 const { stream } = require("@netlify/functions");
 
-exports.handler = stream(async (event, { stream: netlifyStream }) => {
+exports.handler = stream(async (event, context) => {
+    console.log('Context keys:', Object.keys(context || {}));
+    const { stream: netlifyStream } = context || {};
+    console.log('Netlify stream available:', !!netlifyStream);
     console.log('Chat function invoked');
     console.log('Event:', JSON.stringify(event, null, 2));
     
