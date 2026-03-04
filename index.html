@@ -970,7 +970,15 @@
                             document.getElementById('menu-credits').textContent = `${credits.toLocaleString()} Credits`;
                         }
                     });
+                    // Reward 1 credit every 5 mins
+                    if (window.creditInterval) clearInterval(window.creditInterval);
+                    window.creditInterval = setInterval(() => {
+                        runTransaction(creditsRef, (current) => (current || 0) + 1);
+                    }, 5 * 60 * 1000);
                 } else {
+                    if (window.creditInterval) clearInterval(window.creditInterval);
+                    window.creditInterval = null;
+
                     avatar.textContent = "?";
                     avatar.style.background = "rgba(0,0,0,0.1)";
 
@@ -1506,6 +1514,17 @@
 
         async function attemptGeneration(prompt) {
             if (!prompt) return;
+
+            // Enforce max 3 requests per minute
+            const now = Date.now();
+            let reqHistory = JSON.parse(localStorage.getItem('brush_req_history') || '[]');
+            reqHistory = reqHistory.filter(t => now - t < 60000);
+            if (reqHistory.length >= 3) {
+                alert("Rate limit exceeded: Please wait a minute before making another request to prevent abuse.");
+                return;
+            }
+            reqHistory.push(now);
+            localStorage.setItem('brush_req_history', JSON.stringify(reqHistory));
 
             const activeModelEl = dockMenu.querySelector('.model-option.selected') || dropdown.querySelector('.model-option.selected');
             const cost = parseInt(activeModelEl?.getAttribute('data-cost') || "0");
