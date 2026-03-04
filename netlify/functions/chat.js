@@ -1,11 +1,27 @@
 const { stream } = require("@netlify/functions");
 
 exports.handler = stream(async (event) => {
+    console.log('Chat function invoked');
+    console.log('Event:', JSON.stringify(event, null, 2));
+    
     try {
+        if (!event.body) {
+            console.error('No request body provided');
+            return { statusCode: 400, body: 'Missing request body' };
+        }
+
         const { messages, model, stream: shouldStream } = JSON.parse(event.body);
+        console.log('Parsed request:', { messages: messages?.length, model, shouldStream });
+        
         const isOpenRouter = model && model.startsWith('google/');
         const API_KEY = process.env.POLLINATIONS_API_KEY;
         const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+        
+        console.log('Environment variables check:', {
+            hasPollinationsKey: !!API_KEY,
+            hasOpenRouterKey: !!OPENROUTER_API_KEY,
+            isOpenRouter
+        });
 
         const endpoint = isOpenRouter
             ? 'https://openrouter.ai/api/v1/chat/completions'
@@ -14,6 +30,13 @@ exports.handler = stream(async (event) => {
         const authHeader = isOpenRouter
             ? (OPENROUTER_API_KEY ? `Bearer ${OPENROUTER_API_KEY}` : undefined)
             : (API_KEY ? `Bearer ${API_KEY}` : undefined);
+
+        if (!authHeader) {
+            console.error('Missing API key for endpoint:', endpoint);
+            return { statusCode: 500, body: 'Missing API key configuration' };
+        }
+
+        console.log('Making request to:', endpoint);
 
         const response = await fetch(endpoint, {
             method: 'POST',
@@ -29,9 +52,16 @@ exports.handler = stream(async (event) => {
             })
         });
 
+        console.log('Response status:', response.status);
+        console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
         if (!response.ok) {
             const errorMsg = await response.text();
-            console.error('Remote API Failure:', errorMsg);
+            console.error('Remote API Failure:', {
+                status: response.status,
+                statusText: response.statusText,
+                body: errorMsg
+            });
             return { statusCode: response.status, body: errorMsg };
         }
 
@@ -46,6 +76,14 @@ exports.handler = stream(async (event) => {
         };
     } catch (error) {
         console.error('Synthesis Conduit Fault:', error);
-        return { statusCode: 500, body: 'Internal Synthesis Fault' };
+        console.error('Error stack:', error.stack);
+        return { 
+            statusCode: 500, 
+            body: JSON.stringify({ 
+                error: 'Internal Synthesis Fault',
+                message: error.message,
+                stack: error.stack 
+            })
+        };
     }
 });
