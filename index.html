@@ -1016,6 +1016,8 @@
                 let thumbnailUrl = '';
                 if (data.thumbnail && data.thumbnail.startsWith('data:')) {
                     try {
+                        console.log('Uploading thumbnail to Supabase...');
+                        
                         // Convert base64 to blob
                         const base64Data = data.thumbnail.split(',')[1];
                         const blob = await fetch(`data:image/webp;base64,${base64Data}`).then(res => res.blob());
@@ -1033,7 +1035,7 @@
                         
                         if (error) {
                             console.error('Supabase upload error:', error);
-                            throw error;
+                            throw new Error(`Failed to upload thumbnail: ${error.message}`);
                         }
                         
                         // Get public URL
@@ -1042,14 +1044,18 @@
                             .getPublicUrl(fileName);
                         
                         thumbnailUrl = publicUrl;
+                        console.log('Thumbnail uploaded successfully to Supabase:', thumbnailUrl);
+                        
                     } catch (error) {
                         console.error('Failed to upload thumbnail to Supabase:', error);
-                        // Fallback to base64 if upload fails
-                        thumbnailUrl = data.thumbnail;
+                        // Don't fallback to base64 - throw the error instead
+                        throw new Error(`Thumbnail upload failed: ${error.message}`);
                     }
                 } else {
                     thumbnailUrl = data.thumbnail || '';
                 }
+                
+                console.log('Saving project with thumbnail URL:', thumbnailUrl);
                 
                 return set(newRef, {
                     title: data.title,
