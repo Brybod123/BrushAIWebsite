@@ -1089,16 +1089,16 @@
                             </svg>
                         </div>
                         <div class="dropdown-menu">
-                            <div class="model-option selected" data-model="openai-fast" data-cost="0">GPT 5 Nano <span
+                            <div class="model-option selected" data-model="openai" data-cost="0">GPT 5 Nano <span
                                     style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(Free)</span></div>
-                            <div class="model-option" data-model="grok" data-cost="5">Grok 4 Fast <span
+                            <div class="model-option" data-model="x-ai/grok-2" data-cost="5">Grok 4 Fast <span
                                     style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(5 <i
                                         class="fa-solid fa-brush"></i>)</span></div>
-                            <div class="model-option" data-model="claude" data-cost="0">Haiku 4.5 <span
+                            <div class="model-option" data-model="anthropic/claude-3.5-haiku" data-cost="0">Haiku 4.5 <span
                                     style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(Free)</span></div>
-                            <div class="model-option" data-model="mistral" data-cost="0">Mistral Small 24B <span
+                            <div class="model-option" data-model="mistralai/mistral-7b-instruct" data-cost="0">Mistral Small 24B <span
                                     style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(Free)</span></div>
-                            <div class="model-option" data-model="gemini" data-cost="25">Gemini 3 Flash <span
+                            <div class="model-option" data-model="google/gemini-flash-1.5" data-cost="25">Gemini 3 Flash <span
                                     style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(25 <i
                                         class="fa-solid fa-brush"></i>)</span></div>
                             <div class="model-option" data-model="google/gemini-2.5-flash" data-cost="15">Gemini 2.5
@@ -1215,16 +1215,16 @@
                             <polyline points="6 9 12 15 18 9"></polyline>
                         </svg>
                         <div class="dropdown-menu" id="dock-model-menu" style="bottom: 80px;">
-                            <div class="model-option selected" data-model="openai-fast" data-cost="0">GPT 5 Nano <span
+                            <div class="model-option selected" data-model="openai" data-cost="0">GPT 5 Nano <span
                                     style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(Free)</span></div>
-                            <div class="model-option" data-model="grok" data-cost="5">Grok 4 Fast <span
+                            <div class="model-option" data-model="x-ai/grok-2" data-cost="5">Grok 4 Fast <span
                                     style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(5 <i
                                         class="fa-solid fa-brush"></i>)</span></div>
-                            <div class="model-option" data-model="claude" data-cost="0">Haiku 4.5 <span
+                            <div class="model-option" data-model="anthropic/claude-3.5-haiku" data-cost="0">Haiku 4.5 <span
                                     style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(Free)</span></div>
-                            <div class="model-option" data-model="mistral" data-cost="0">Mistral Small 24B <span
+                            <div class="model-option" data-model="mistralai/mistral-7b-instruct" data-cost="0">Mistral Small 24B <span
                                     style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(Free)</span></div>
-                            <div class="model-option" data-model="gemini" data-cost="25">Gemini 3 Flash <span
+                            <div class="model-option" data-model="google/gemini-flash-1.5" data-cost="25">Gemini 3 Flash <span
                                     style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(25 <i
                                         class="fa-solid fa-brush"></i>)</span></div>
                             <div class="model-option" data-model="google/gemini-2.5-flash" data-cost="15">Gemini 2.5
@@ -1296,8 +1296,13 @@
             const isHomeMenu = opt.closest('#model-dropdown') !== null;
             if (isHomeMenu && svgEl) {
                 trigger.querySelector('span').textContent = opt.textContent;
-                let logoKey = modelId;
+                let logoKey = 'openai-fast';
                 if (modelId.includes('gemini')) logoKey = 'gemini';
+                else if (modelId.includes('claude')) logoKey = 'claude';
+                else if (modelId.includes('grok')) logoKey = 'grok';
+                else if (modelId.includes('mistral')) logoKey = 'mistral';
+                else if (modelId.includes('openai')) logoKey = 'openai-fast';
+                
                 svgEl.innerHTML = modelLogos[logoKey] || modelLogos['openai-fast'];
             }
 

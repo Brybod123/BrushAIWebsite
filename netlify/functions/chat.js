@@ -13,7 +13,8 @@ exports.handler = stream(async (event, context) => {
         const { messages, model, stream: shouldStream } = JSON.parse(event.body);
         console.log('Parsed request:', { messages: messages?.length, model, shouldStream });
 
-        const isOpenRouter = model && model.startsWith('google/');
+        // Route to OpenRouter if model contains a slash (e.g., 'anthropic/claude-3.5-haiku')
+        const isOpenRouter = model && model.includes('/');
         const API_KEY = process.env.POLLINATIONS_API_KEY;
         const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
@@ -27,13 +28,21 @@ exports.handler = stream(async (event, context) => {
             ? 'https://openrouter.ai/api/v1/chat/completions'
             : 'https://gen.pollinations.ai/v1/chat/completions';
 
-        const authHeader = isOpenRouter
-            ? (OPENROUTER_API_KEY ? `Bearer ${OPENROUTER_API_KEY}` : undefined)
-            : (API_KEY ? `Bearer ${API_KEY}` : undefined);
-
-        if (!authHeader) {
-            console.error('Missing API key for endpoint:', endpoint);
-            return { statusCode: 500, body: 'Missing API key configuration' };
+        let authHeader = undefined;
+        if (isOpenRouter) {
+            if (!OPENROUTER_API_KEY) {
+                console.error('Missing OPENROUTER_API_KEY for OpenRouter endpoint');
+                return {
+                    statusCode: 500,
+                    body: JSON.stringify({
+                        error: 'Missing API key configuration',
+                        details: 'The environment variable OPENROUTER_API_KEY is not set.'
+                    })
+                };
+            }
+            authHeader = `Bearer ${OPENROUTER_API_KEY}`;
+        } else if (API_KEY) {
+            authHeader = `Bearer ${API_KEY}`;
         }
 
         console.log('Making request to:', endpoint);
@@ -62,7 +71,15 @@ exports.handler = stream(async (event, context) => {
 
         if (!response.ok) {
             const errorMsg = await response.text();
-            return { statusCode: response.status, body: errorMsg };
+            console.error(`Upstream error (${response.status}):`, errorMsg);
+            return {
+                statusCode: response.status,
+                body: JSON.stringify({
+                    error: 'Upstream Synthesis Error',
+                    status: response.status,
+                    details: errorMsg
+                })
+            };
         }
 
         // Manually handle SSE streaming to ensure proper format
