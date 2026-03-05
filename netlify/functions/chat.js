@@ -99,14 +99,14 @@ exports.handler = stream(async (event, context) => {
                 const trimmed = line.trim();
                 if (trimmed) {
                     // Write each line to the Netlify stream
-                    context.stream.write(trimmed + '\n');
+                    context.write(trimmed + '\n');
                 }
             }
         }
 
         // Write any remaining buffer content
         if (buffer.trim()) {
-            context.stream.write(buffer);
+            context.write(buffer);
         }
 
         return;
