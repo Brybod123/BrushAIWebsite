@@ -12,11 +12,19 @@ exports.handler = async (event) => {
     const isOpenRouter = model && model.includes("/");
     const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
+    // 🔒 SAFE DEBUG LOGS (NO KEY CONTENT)
+    console.log("Is OpenRouter:", isOpenRouter);
+    console.log("API Key Exists:", !!OPENROUTER_API_KEY);
+    console.log(
+      "API Key Length:",
+      OPENROUTER_API_KEY ? OPENROUTER_API_KEY.length : 0
+    );
+
     if (isOpenRouter && !OPENROUTER_API_KEY) {
       return {
         statusCode: 500,
         body: JSON.stringify({
-          error: "Missing OPENROUTER_API_KEY",
+          error: "Missing OPENROUTER_API_KEY in environment variables",
         }),
       };
     }
@@ -32,6 +40,7 @@ exports.handler = async (event) => {
     if (isOpenRouter) {
       headers["Authorization"] = `Bearer ${OPENROUTER_API_KEY}`;
       headers["HTTP-Referer"] = "https://your-site.netlify.app";
+      headers["X-Title"] = "Your App Name";
     }
 
     const controller = new AbortController();
@@ -55,16 +64,19 @@ exports.handler = async (event) => {
     if (!upstreamResponse.ok) {
       const errorText = await upstreamResponse.text();
 
+      console.error("Upstream Error:", errorText);
+
       return {
         statusCode: upstreamResponse.status,
         body: JSON.stringify({
-          error: "Upstream Error",
+          error: "Upstream API Error",
+          status: upstreamResponse.status,
           details: errorText,
         }),
       };
     }
 
-    // STREAMING RESPONSE
+    // ✅ STREAMING RESPONSE
     if (shouldStream) {
       return new Response(upstreamResponse.body, {
         status: 200,
@@ -76,7 +88,7 @@ exports.handler = async (event) => {
       });
     }
 
-    // NORMAL RESPONSE
+    // ✅ NORMAL RESPONSE
     const data = await upstreamResponse.json();
 
     return {
@@ -87,7 +99,7 @@ exports.handler = async (event) => {
       body: JSON.stringify(data),
     };
   } catch (error) {
-    console.error("Function Error:", error);
+    console.error("Function Crash:", error);
 
     return {
       statusCode: 500,
