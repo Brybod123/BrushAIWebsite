@@ -1,5 +1,13 @@
 exports.handler = async (event) => {
   try {
+    // Only allow POST
+    if (event.httpMethod !== "POST") {
+      return {
+        statusCode: 405,
+        body: JSON.stringify({ error: "Method Not Allowed" }),
+      };
+    }
+
     if (!event.body) {
       return {
         statusCode: 400,
@@ -7,12 +15,12 @@ exports.handler = async (event) => {
       };
     }
 
-    const { messages, model, stream: shouldStream } = JSON.parse(event.body);
+    const { messages, model } = JSON.parse(event.body);
 
     const isOpenRouter = model && model.includes("/");
     const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
-    // 🔒 SAFE DEBUG LOGS (NO KEY CONTENT)
+    // 🔒 Safe debug logs
     console.log("Is OpenRouter:", isOpenRouter);
     console.log("API Key Exists:", !!OPENROUTER_API_KEY);
     console.log(
@@ -43,53 +51,33 @@ exports.handler = async (event) => {
       headers["X-Title"] = "Your App Name";
     }
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 55000);
-
-    const upstreamResponse = await fetch(endpoint, {
+    const response = await fetch(endpoint, {
       method: "POST",
       headers,
       body: JSON.stringify({
         model: model || "gpt-4o-mini",
         messages,
-        stream: !!shouldStream,
         max_tokens: 1000,
         temperature: 0.7,
       }),
-      signal: controller.signal,
     });
 
-    clearTimeout(timeout);
-
-    if (!upstreamResponse.ok) {
-      const errorText = await upstreamResponse.text();
+    if (!response.ok) {
+      const errorText = await response.text();
 
       console.error("Upstream Error:", errorText);
 
       return {
-        statusCode: upstreamResponse.status,
+        statusCode: response.status,
         body: JSON.stringify({
           error: "Upstream API Error",
-          status: upstreamResponse.status,
+          status: response.status,
           details: errorText,
         }),
       };
     }
 
-    // ✅ STREAMING RESPONSE
-    if (shouldStream) {
-      return new Response(upstreamResponse.body, {
-        status: 200,
-        headers: {
-          "Content-Type": "text/event-stream",
-          "Cache-Control": "no-cache",
-          Connection: "keep-alive",
-        },
-      });
-    }
-
-    // ✅ NORMAL RESPONSE
-    const data = await upstreamResponse.json();
+    const data = await response.json();
 
     return {
       statusCode: 200,
@@ -98,6 +86,7 @@ exports.handler = async (event) => {
       },
       body: JSON.stringify(data),
     };
+
   } catch (error) {
     console.error("Function Crash:", error);
 
