@@ -1227,6 +1227,13 @@
                     <div style="display: flex; gap: 10px;">
                         <button class="exit-editor" id="deploy-btn"
                             style="background: rgba(255,255,255,0.05); color: #fff; border-radius: 20px; width: auto; padding: 0 25px; border: 1px solid rgba(255,255,255,0.1); font-size: 13px; font-weight: 700;">Deploy</button>
+                        <div class="exit-editor" id="refresh-preview" title="Refresh Preview"
+                            style="width: 50px; height: 50px; background: rgba(0,255,136,0.04); border: 1px solid rgba(0,255,136,0.1); color: #00ff88; border-radius: 25px;">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                            </svg>
+                        </div>
                         <div class="exit-editor" id="close-project-view" title="Exit Editor"
                             style="width: 50px; height: 50px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: #fff; border-radius: 25px;">
                             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
@@ -1553,6 +1560,15 @@
             websitePreview.src = "about:blank";
             dockPromptInput.value = "";
             editorDock.classList.remove('streaming');
+        });
+
+        document.getElementById('refresh-preview').addEventListener('click', () => {
+            // Refresh the iframe by reloading its content
+            const currentSrc = websitePreview.srcdoc;
+            websitePreview.srcdoc = "";
+            setTimeout(() => {
+                websitePreview.srcdoc = currentSrc;
+            }, 10);
         });
 
         homePromptInput.addEventListener('keydown', (e) => {
