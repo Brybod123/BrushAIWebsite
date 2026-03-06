@@ -1487,17 +1487,6 @@
         async function attemptGeneration(prompt) {
             if (!prompt) return;
 
-            // Enforce max 3 requests per minute
-            const now = Date.now();
-            let reqHistory = JSON.parse(localStorage.getItem('brush_req_history') || '[]');
-            reqHistory = reqHistory.filter(t => now - t < 60000);
-            if (reqHistory.length >= 3) {
-                alert("Rate limit exceeded: Please wait a minute before making another request to prevent abuse.");
-                return;
-            }
-            reqHistory.push(now);
-            localStorage.setItem('brush_req_history', JSON.stringify(reqHistory));
-
             const activeModelEl = dockMenu.querySelector('.model-option.selected') || dropdown.querySelector('.model-option.selected');
             const cost = parseInt(activeModelEl?.getAttribute('data-cost') || "0");
 
