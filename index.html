@@ -1427,7 +1427,7 @@
                 if (!response.ok) throw new Error(`Synthesis error: ${response.status}`);
 
                 const data = await response.json();
-                const content = JSON.stringify(data, null, 2);
+                const content = data.choices?.[0]?.message?.content || JSON.stringify(data, null, 2);
                 
                 if (callback) callback(content, content);
                 return content;
