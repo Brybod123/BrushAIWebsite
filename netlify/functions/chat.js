@@ -4,20 +4,17 @@ exports.handler = async (event, context) => {
     
     // Handle search and replace for instant updates
     if (search && replace) {
-      const lastMessage = messages[messages.length - 1];
-      const content = lastMessage.content;
-      const updatedContent = content.replace(new RegExp(search, 'g'), replace);
+      // Add a system message for AI to do search and replace
+      const updatedMessages = [
+        ...messages,
+        {
+          role: 'system',
+          content: `Please search for "${search}" and replace it with "${replace}" in the previous response. Return only the updated content.`
+        }
+      ];
       
-      return {
-        statusCode: 200,
-        body: JSON.stringify({
-          choices: [{
-            message: {
-              content: updatedContent
-            }
-          }]
-        })
-      };
+      // Continue with normal AI processing but with updated messages
+      messages = updatedMessages;
     }
     
     let endpoint, headers, requestBody;
@@ -32,7 +29,7 @@ exports.handler = async (event, context) => {
       };
       requestBody = {
         model: model || 'gemini-fast',
-        messages,
+        messages: messages,
         max_tokens: 8000,
         temperature: 0.7
       };
@@ -48,7 +45,7 @@ exports.handler = async (event, context) => {
       };
       requestBody = {
         model: model || 'openai/gpt-4o-mini',
-        messages,
+        messages: messages,
         max_tokens: 8000,
         temperature: 0.7
       };
