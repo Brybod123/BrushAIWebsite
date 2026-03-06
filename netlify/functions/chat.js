@@ -1,6 +1,24 @@
 exports.handler = async (event, context) => {
   try {
-    const { messages, model, provider } = JSON.parse(event.body);
+    const { messages, model, provider, search, replace } = JSON.parse(event.body);
+    
+    // Handle search and replace for instant updates
+    if (search && replace) {
+      const lastMessage = messages[messages.length - 1];
+      const content = lastMessage.content;
+      const updatedContent = content.replace(new RegExp(search, 'g'), replace);
+      
+      return {
+        statusCode: 200,
+        body: JSON.stringify({
+          choices: [{
+            message: {
+              content: updatedContent
+            }
+          }]
+        })
+      };
+    }
     
     let endpoint, headers, requestBody;
 

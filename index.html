@@ -1245,6 +1245,11 @@
                     <div class="dock-input-wrapper">
                         <input type="text" class="dock-prompt" id="dock-prompt-input" placeholder="Synthesis prompt...">
                     </div>
+                    <div style="display: flex; gap: 10px; margin: 0 35px;">
+                        <input type="text" id="search-input" placeholder="Search text..." style="flex: 1; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; padding: 8px 15px; color: #fff; font-size: 12px;">
+                        <input type="text" id="replace-input" placeholder="Replace with..." style="flex: 1; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; padding: 8px 15px; color: #fff; font-size: 12px;">
+                        <button id="search-replace-btn" style="background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.3); border-radius: 15px; padding: 8px 20px; color: #00ff88; font-size: 12px; font-weight: 600; cursor: pointer;">Replace</button>
+                    </div>
                     <div id="viewer-title-display">Project Title</div>
                     <div style="display: flex; gap: 10px;">
                         <button class="exit-editor" id="deploy-btn"
@@ -1417,16 +1422,63 @@
             dockMenu.style.display = 'none';
         });
 
-        async function streamAIResponse(messages, model, callback) {
+        // Search and Replace functionality
+        document.getElementById('search-replace-btn').addEventListener('click', async () => {
+            const searchText = document.getElementById('search-input').value;
+            const replaceText = document.getElementById('replace-input').value;
+            
+            if (!searchText || !replaceText) {
+                alert('Please enter both search and replace text');
+                return;
+            }
+            
+            const modelId = dockMenu.querySelector('.model-option.selected')?.getAttribute('data-model') || 'openai/gpt-4o-mini';
+            
             try {
+                const updatedContent = await streamAIResponse(messageStack, modelId, null, searchText, replaceText);
+                
+                // Update the last assistant message
+                if (messageStack.length > 0 && messageStack[messageStack.length - 1].role === 'assistant') {
+                    messageStack[messageStack.length - 1].content = updatedContent;
+                }
+                
+                // Update preview if in agent mode
+                if (currentMode === 'agent') {
+                    websitePreview.srcdoc = updatedContent;
+                }
+                
+                // Update chat view if in chat mode
+                if (currentMode === 'chat') {
+                    renderChat();
+                }
+                
+                // Clear inputs
+                document.getElementById('search-input').value = '';
+                document.getElementById('replace-input').value = '';
+                
+            } catch (error) {
+                console.error('Search replace error:', error);
+                alert('Search replace failed: ' + error.message);
+            }
+        });
+
+        async function streamAIResponse(messages, model, callback, search, replace) {
+            try {
+                const body = {
+                    messages: messages,
+                    model: model || 'openai/gpt-4o-mini',
+                    provider: model === 'gemini-fast' ? 'pln' : 'opn'
+                };
+                
+                if (search && replace) {
+                    body.search = search;
+                    body.replace = replace;
+                }
+
                 const response = await fetch('/.netlify/functions/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        messages: messages,
-                        model: model || 'openai/gpt-4o-mini',
-                        provider: model === 'gemini-fast' ? 'pln' : 'opn'
-                    })
+                    body: JSON.stringify(body)
                 });
 
                 if (!response.ok) throw new Error(`Synthesis error: ${response.status}`);
