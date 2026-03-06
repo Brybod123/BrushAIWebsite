@@ -15,7 +15,7 @@ exports.handler = async (event, context) => {
       requestBody = {
         model: model || 'gemini-fast',
         messages,
-        max_tokens: 1000,
+        max_tokens: 8000,
         temperature: 0.7
       };
     } else {
@@ -31,7 +31,7 @@ exports.handler = async (event, context) => {
       requestBody = {
         model: model || 'openai/gpt-4o-mini',
         messages,
-        max_tokens: 1000,
+        max_tokens: 8000,
         temperature: 0.7
       };
     }
