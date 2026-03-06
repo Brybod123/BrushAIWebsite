@@ -12,7 +12,7 @@ exports.handler = async (event, context) => {
         'X-Title': 'BrushAI'
       },
       body: JSON.stringify({
-        model: model || 'openrouter/gpt-4o-mini',
+        model: model || 'openai/gpt-4o-mini',
         messages,
         max_tokens: 1000,
         temperature: 0.7
