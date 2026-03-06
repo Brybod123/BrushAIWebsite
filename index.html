@@ -1089,7 +1089,7 @@
                             </svg>
                         </div>
                         <div class="dropdown-menu">
-                            <div class="model-option selected" data-model="openrouter/gpt-4o-mini" data-cost="0">GPT-4o-mini <span
+                            <div class="model-option selected" data-model="openai/gpt-4o-mini" data-cost="0">GPT-4o-mini <span
                                     style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(Free)</span></div>
                             <div class="model-option" data-model="x-ai/grok-2" data-cost="5">Grok 4 Fast <span
                                     style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(5 <i
@@ -1442,7 +1442,7 @@
             editorDock.classList.add('streaming');
             if (currentMode === 'agent') previewContainer.classList.add('blob-mode');
 
-            const modelId = dockMenu.querySelector('.model-option.selected')?.getAttribute('data-model') || 'openrouter/gpt-4o-mini';
+            const modelId = dockMenu.querySelector('.model-option.selected')?.getAttribute('data-model') || 'openai/gpt-4o-mini';
 
             if (currentMode === 'agent') {
                 promptHistory.push(prompt);
