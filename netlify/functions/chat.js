@@ -1,22 +1,41 @@
 exports.handler = async (event, context) => {
   try {
-    const { messages, model } = JSON.parse(event.body);
-    const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+    const { messages, model, provider } = JSON.parse(event.body);
+    
+    let endpoint, headers, requestBody;
 
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
+    if (provider === 'pln' || (!provider && model === 'gemini-fast')) {
+      // Pollinations
+      endpoint = 'https://gen.pollinations.ai/v1/chat/completions';
+      headers = { 'Content-Type': 'application/json' };
+      requestBody = {
+        model: model || 'gemini-fast',
+        messages,
+        max_tokens: 1000,
+        temperature: 0.7
+      };
+    } else {
+      // OpenRouter (default)
+      const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+      endpoint = 'https://openrouter.ai/api/v1/chat/completions';
+      headers = {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
         'HTTP-Referer': 'BrushAI',
         'X-Title': 'BrushAI'
-      },
-      body: JSON.stringify({
+      };
+      requestBody = {
         model: model || 'openai/gpt-4o-mini',
         messages,
         max_tokens: 1000,
         temperature: 0.7
-      })
+      };
+    }
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(requestBody)
     });
 
     const data = await response.json();

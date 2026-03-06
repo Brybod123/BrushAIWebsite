@@ -1091,6 +1091,8 @@
                         <div class="dropdown-menu">
                             <div class="model-option selected" data-model="openai/gpt-4o-mini" data-cost="0">GPT-4o-mini <span
                                     style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(Free)</span></div>
+                            <div class="model-option" data-model="gemini-fast" data-cost="0">Gemini Fast <span
+                                    style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(Free)</span></div>
                             <div class="model-option" data-model="x-ai/grok-2" data-cost="5">Grok 4 Fast <span
                                     style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(5 <i
                                         class="fa-solid fa-brush"></i>)</span></div>
@@ -1216,6 +1218,8 @@
                         </svg>
                         <div class="dropdown-menu" id="dock-model-menu" style="bottom: 80px;">
                             <div class="model-option selected" data-model="openai/gpt-4o-mini" data-cost="0">GPT-4o-mini <span
+                                    style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(Free)</span></div>
+                            <div class="model-option" data-model="gemini-fast" data-cost="0">Gemini Fast <span
                                     style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(Free)</span></div>
                             <div class="model-option" data-model="x-ai/grok-2" data-cost="5">Grok 4 Fast <span
                                     style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(5 <i
@@ -1420,7 +1424,8 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         messages: messages,
-                        model: model || 'openai/gpt-4o-mini'
+                        model: model || 'openai/gpt-4o-mini',
+                        provider: model === 'gemini-fast' ? 'pln' : 'opn'
                     })
                 });
 
