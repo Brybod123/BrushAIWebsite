@@ -6,8 +6,12 @@ exports.handler = async (event, context) => {
 
     if (provider === 'pln' || (!provider && model === 'gemini-fast')) {
       // Pollinations
+      const POLLINATIONS_API_KEY = process.env.POLLINATIONS_API_KEY;
       endpoint = 'https://gen.pollinations.ai/v1/chat/completions';
-      headers = { 'Content-Type': 'application/json' };
+      headers = { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${POLLINATIONS_API_KEY}`
+      };
       requestBody = {
         model: model || 'gemini-fast',
         messages,
