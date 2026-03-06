@@ -1296,14 +1296,14 @@
             const isHomeMenu = opt.closest('#model-dropdown') !== null;
             if (isHomeMenu && svgEl) {
                 trigger.querySelector('span').textContent = opt.textContent;
-                let logoKey = 'openai-fast';
+                let logoKey = 'openrouter';
                 if (modelId.includes('gemini')) logoKey = 'gemini';
                 else if (modelId.includes('claude')) logoKey = 'claude';
                 else if (modelId.includes('grok')) logoKey = 'grok';
                 else if (modelId.includes('mistral')) logoKey = 'mistral';
-                else if (modelId.includes('openai')) logoKey = 'openai-fast';
+                else if (modelId.includes('openrouter') || modelId.includes('openai')) logoKey = 'openrouter';
                 
-                svgEl.innerHTML = modelLogos[logoKey] || modelLogos['openai-fast'];
+                svgEl.innerHTML = modelLogos[logoKey] || modelLogos['openrouter'];
             }
 
             // Allow both menus to update their selected state visually
@@ -1420,7 +1420,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         messages: messages,
-                        model: model || 'openrouter/gpt-4o-mini'
+                        model: model || 'openai/gpt-4o-mini'
                     })
                 });
 
@@ -1442,7 +1442,7 @@
             editorDock.classList.add('streaming');
             if (currentMode === 'agent') previewContainer.classList.add('blob-mode');
 
-            const modelId = dockMenu.querySelector('.model-option.selected')?.getAttribute('data-model') || 'openai-fast';
+            const modelId = dockMenu.querySelector('.model-option.selected')?.getAttribute('data-model') || 'openrouter/gpt-4o-mini';
 
             if (currentMode === 'agent') {
                 promptHistory.push(prompt);
