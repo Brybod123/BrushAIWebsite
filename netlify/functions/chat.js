@@ -19,7 +19,7 @@ exports.handler = async (event, context) => {
     
     let endpoint, headers, requestBody;
 
-    if (provider === 'pln' || (!provider && model === 'gemini-fast')) {
+    if (provider === 'pln' || (!provider && !model.includes('/'))) {
       // Pollinations
       const POLLINATIONS_API_KEY = process.env.POLLINATIONS_API_KEY;
       endpoint = 'https://gen.pollinations.ai/v1/chat/completions';

@@ -1093,10 +1093,10 @@
                                     style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(Free)</span></div>
                             <div class="model-option" data-model="gemini-fast" data-cost="0">Gemini 2.5 Flash Lite <span
                                     style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(Free)</span></div>
-                            <div class="model-option" data-model="anthropic/claude-3.5-haiku" data-cost="0">Haiku 4.5 (claude-fast) <span
-                                    style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(no pricing)</span></div>
-                            <div class="model-option" data-model="kimi" data-cost="0">Kimi K2.5 (kimi) <span
-                                    style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(no pricing)</span></div>
+                            <div class="model-option" data-model="anthropic/claude-3.5-haiku" data-cost="0">Haiku 4.5 <span
+                                    style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(Free)</span></div>
+                            <div class="model-option" data-model="kimi" data-cost="0">Kimi K2.5 <span
+                                    style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(Free)</span></div>
                             <div class="model-option" data-model="google/gemini-3.1-flash-lite-preview" data-cost="5">Gemini 3.1 Flash Lite <span
                                     style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(5 credits)</span></div>
                             <div class="model-option" data-model="x-ai/grok-code-fast-1" data-cost="5">Grok Code Fast 1 <span
@@ -1210,10 +1210,10 @@
                                     style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(Free)</span></div>
                             <div class="model-option" data-model="gemini-fast" data-cost="0">Gemini 2.5 Flash Lite <span
                                     style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(Free)</span></div>
-                            <div class="model-option" data-model="anthropic/claude-3.5-haiku" data-cost="0">Haiku 4.5 (claude-fast) <span
-                                    style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(no pricing)</span></div>
-                            <div class="model-option" data-model="kimi" data-cost="0">Kimi K2.5 (kimi) <span
-                                    style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(no pricing)</span></div>
+                            <div class="model-option" data-model="anthropic/claude-3.5-haiku" data-cost="0">Haiku 4.5 <span
+                                    style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(Free)</span></div>
+                            <div class="model-option" data-model="kimi" data-cost="0">Kimi K2.5 <span
+                                    style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(Free)</span></div>
                             <div class="model-option" data-model="google/gemini-3.1-flash-lite-preview" data-cost="5">Gemini 3.1 Flash Lite <span
                                     style="font-size: 10px; opacity: 0.6; margin-left: 5px;">(5 credits)</span></div>
                             <div class="model-option" data-model="x-ai/grok-code-fast-1" data-cost="5">Grok Code Fast 1 <span
@@ -1400,7 +1400,7 @@
                 const body = {
                     messages: messages,
                     model: model || 'openai/gpt-4o-mini',
-                    provider: model === 'gemini-fast' ? 'pln' : 'opn'
+                    provider: (!model.includes('/')) ? 'pln' : 'opn'
                 };
                 
                 if (search && replace) {
