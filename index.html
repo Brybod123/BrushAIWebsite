@@ -845,6 +845,43 @@
             transform: scale(1.1);
         }
 
+        /* Deploy Dropdown */
+        .deploy-dropdown .dropdown-menu {
+            position: absolute;
+            background: rgba(30, 30, 32, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+            display: none;
+            flex-direction: column;
+            padding: 6px;
+            z-index: 1001;
+            transform-origin: bottom;
+            animation: slideUp 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        .deploy-dropdown.open .dropdown-menu {
+            display: flex;
+        }
+
+        .deploy-option {
+            padding: 10px 16px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .deploy-option:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
         /* History Sidebar */
         .history-sidebar {
             width: 280px;
@@ -1232,8 +1269,26 @@
                     </div>
                     <div id="viewer-title-display">Project Title</div>
                     <div style="display: flex; gap: 10px;">
-                        <button class="exit-editor" id="deploy-btn"
-                            style="background: rgba(255,255,255,0.05); color: #fff; border-radius: 20px; width: auto; padding: 0 25px; border: 1px solid rgba(255,255,255,0.1); font-size: 13px; font-weight: 700;">Deploy</button>
+                        <div class="deploy-dropdown" style="position: relative;">
+                            <button class="exit-editor" id="deploy-btn"
+                                style="background: rgba(255,255,255,0.05); color: #fff; border-radius: 20px; width: auto; padding: 0 25px; border: 1px solid rgba(255,255,255,0.1); font-size: 13px; font-weight: 700;">Deploy</button>
+                            <div class="dropdown-menu" id="deploy-menu" style="bottom: 60px; right: 0; min-width: 150px;">
+                                <div class="deploy-option" data-visibility="public">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                        <circle cx="12" cy="12" r="3"/>
+                                    </svg>
+                                    Deploy as Public
+                                </div>
+                                <div class="deploy-option" data-visibility="draft">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 2.47 2.28L12 22l-2.47-2.28L7 14.09l-5-4.87L8.91 8.26 12 2z"/>
+                                        <path d="M12 2v20"/>
+                                    </svg>
+                                    Save as Draft
+                                </div>
+                            </div>
+                        </div>
                         <div class="exit-editor" id="refresh-preview" title="Refresh Preview"
                             style="width: 50px; height: 50px; background: rgba(0,255,136,0.04); border: 1px solid rgba(0,255,136,0.1); color: #00ff88; border-radius: 25px;">
                             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
@@ -1597,8 +1652,36 @@
         });
 
         // --- Firebase Sycn & Screenshot Engine ---
-        const deployBtn = document.querySelector('.exit-editor:not(#close-project-view)');
-        deployBtn.addEventListener('click', async () => {
+        const deployBtn = document.getElementById('deploy-btn');
+        const deployMenu = document.getElementById('deploy-menu');
+        const deployOptions = deployMenu.querySelectorAll('.deploy-option');
+        let selectedVisibility = 'public';
+
+        // Deploy dropdown logic
+        deployBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            deployMenu.parentElement.classList.toggle('open');
+        });
+
+        deployOptions.forEach(option => {
+            option.addEventListener('click', (e) => {
+                e.stopPropagation();
+                selectedVisibility = option.getAttribute('data-visibility');
+                deployMenu.parentElement.classList.remove('open');
+                
+                // Trigger deployment with selected visibility
+                handleDeploy(selectedVisibility);
+            });
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!deployMenu.contains(e.target) && !deployBtn.contains(e.target)) {
+                deployMenu.parentElement.classList.remove('open');
+            }
+        });
+
+        async function handleDeploy(visibility) {
             // Check if user is signed in before allowing project posting
             if (!window.currentUser) {
                 alert("Please sign in to post projects. Click the account icon in the sidebar to sign in.");
@@ -1606,7 +1689,7 @@
             }
 
             const title = prompt("Enter a title for your project:") || "Untitled Creation";
-            deployBtn.textContent = "Deploying...";
+            deployBtn.textContent = visibility === 'public' ? "Deploying..." : "Saving draft...";
 
             try {
                 // Take Screenshot
@@ -1651,30 +1734,37 @@
                             title,
                             html: websitePreview.srcdoc,
                             thumbnail: publicUrl,
-                            prompts: promptHistory
+                            prompts: promptHistory,
+                            visibility: visibility,
+                            isDraft: visibility === 'draft'
                         });
                     }
                 }, 'image/webp', 0.5);
 
-                deployBtn.textContent = "Deployed";
+                deployBtn.textContent = visibility === 'public' ? "Deployed" : "Draft saved";
                 setTimeout(() => deployBtn.textContent = "Deploy", 2000);
             } catch (e) {
                 console.error("Deploy Fault:", e);
                 deployBtn.textContent = "Error";
             }
-        });
+        }
 
         function populateGrid(projectsData) {
             const grid = document.getElementById('project-grid');
             if (!grid) return;
             grid.innerHTML = '';
 
-            if (!projectsData || Object.keys(projectsData).length === 0) {
-                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 100px; color: rgba(0,0,0,0.3); font-weight: 600;">No projects found. Start a new synthesis below.</div>';
+            // Filter out drafts - only show public projects
+            const publicProjects = Object.entries(projectsData).filter(([id, project]) => 
+                project && !project.isDraft
+            );
+
+            if (publicProjects.length === 0) {
+                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 100px; color: rgba(0,0,0,0.3); font-weight: 600;">No public projects found. Create or publish your first project below.</div>';
                 return;
             }
 
-            Object.entries(projectsData).reverse().forEach(([id, project]) => {
+            publicProjects.reverse().forEach(([id, project]) => {
                 if (!project) return;
                 const title = project.title || "Untitled Creation";
                 const thumbnail = project.thumbnail || "";
