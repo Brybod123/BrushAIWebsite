@@ -1189,7 +1189,9 @@
                         <div style="flex: 1;"></div>
                         <div class="social-btn" id="author-tag" style="background: transparent; border: none;">
                             <div id="author-avatar"
-                                style="width:24px; height:24px; border-radius:50%; background:url('https://api.dicebear.com/7.x/avataaars/svg?seed=BrushAI&backgroundColor=b6e3f4,c0aede,d1d4f9&radius=50') center/cover; background-size:cover;"></div>
+                                style="width:24px; height:24px; border-radius:50%; overflow: hidden;">
+                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=BrushAI&backgroundColor=b6e3f4,c0aede,d1d4f9&radius=50" alt="BrushAI" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'; this.parentElement.style.background='rgba(0,0,0,0.1)'; this.parentElement.textContent='B';">
+                            </div>
                             <span id="author-name">BrushAI</span>
                         </div>
                     </div>
@@ -1682,8 +1684,8 @@
                 const createdDate = project.timestamp ? new Date(project.timestamp).toLocaleDateString() : 'Recent';
                 
                 // Use author's PFP if available, otherwise use title initial
-                const avatarContent = authorPhoto ? '' : avatar;
-                const avatarStyle = authorPhoto ? `style="background: url('${authorPhoto}') center/cover; background-size: cover;"` : '';
+                const avatarContent = authorPhoto ? `<img src="${authorPhoto}" alt="${authorName}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;" onerror="this.style.display='none'; this.parentElement.style.background='rgba(0,0,0,0.1)'; this.parentElement.textContent='${avatar}';">` : avatar;
+                const avatarStyle = authorPhoto ? '' : '';
                 
                 card.innerHTML = `
                     <div class="card-thumbnail" ${thumbnail ? `style="background-image: url('${thumbnail}'); background-size: cover; background-position: center;"` : ''}></div>
@@ -1710,12 +1712,10 @@
                     const authorAvatar = document.getElementById('author-avatar');
                     if (project.author && project.author !== "Anonymous") {
                         authorName.textContent = project.author.name;
-                        authorAvatar.style.background = `url(${project.author.photo}) center/cover`;
-                        authorAvatar.style.backgroundSize = "cover";
+                        authorAvatar.innerHTML = `<img src="${project.author.photo}" alt="${project.author.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" onerror="this.style.display='none'; this.parentElement.style.background='rgba(0,0,0,0.1)'; this.parentElement.textContent='?';">`;
                     } else {
                         authorName.textContent = "BrushAI";
-                        authorAvatar.style.background = "url('https://api.dicebear.com/7.x/avataaars/svg?seed=BrushAI&backgroundColor=b6e3f4,c0aede,d1d4f9&radius=50') center/cover";
-                        authorAvatar.style.backgroundSize = "cover";
+                        authorAvatar.innerHTML = `<img src="https://api.dicebear.com/7.x/avataaars/svg?seed=BrushAI&backgroundColor=b6e3f4,c0aede,d1d4f9&radius=50" alt="BrushAI" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" onerror="this.style.display='none'; this.parentElement.style.background='rgba(0,0,0,0.1)'; this.parentElement.textContent='B';">`;
                     }
 
                     // Like Trigger
