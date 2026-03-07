@@ -842,7 +842,7 @@
         .exit-editor:hover {
             background: #ff3b30;
             color: #fff;
-            transform: rotate(90deg) scale(1.1);
+            transform: scale(1.1);
         }
 
         /* History Sidebar */
@@ -1149,7 +1149,7 @@
             <div class="project-view" id="project-detail-view">
                 <div class="editor-header"
                     style="display: flex; justify-content: space-between; align-items: center; padding: 0 40px; margin-bottom: -15px;">
-                    <h2 id="project-editor-title" style="color: #fff; font-size: 18px; font-weight: 700;">Synthesis
+                    <h2 id="project-editor-title" style="color: #fff; font-size: 18px; font-weight: 700;">Creation
                         Workspace</h2>
                 </div>
                 <main class="workspace">
@@ -1189,8 +1189,8 @@
                         <div style="flex: 1;"></div>
                         <div class="social-btn" id="author-tag" style="background: transparent; border: none;">
                             <div id="author-avatar"
-                                style="width:24px; height:24px; border-radius:50%; background:#ccc;"></div>
-                            <span id="author-name">Synthesis Core</span>
+                                style="width:24px; height:24px; border-radius:50%; background:url('https://api.dicebear.com/7.x/avataaars/svg?seed=BrushAI&backgroundColor=b6e3f4,c0aede,d1d4f9&radius=50') center/cover; background-size:cover;"></div>
+                            <span id="author-name">BrushAI</span>
                         </div>
                     </div>
 
@@ -1226,7 +1226,7 @@
                         </div>
                     </div>
                     <div class="dock-input-wrapper">
-                        <input type="text" class="dock-prompt" id="dock-prompt-input" placeholder="Synthesis prompt...">
+                        <input type="text" class="dock-prompt" id="dock-prompt-input" placeholder="Creation prompt...">
                     </div>
                     <div id="viewer-title-display">Project Title</div>
                     <div style="display: flex; gap: 10px;">
@@ -1426,7 +1426,7 @@
                     body: JSON.stringify(body)
                 });
 
-                if (!response.ok) throw new Error(`Synthesis error: ${response.status}`);
+                if (!response.ok) throw new Error(`Creation error: ${response.status}`);
 
                 const data = await response.json();
                 const content = data.choices?.[0]?.message?.content || JSON.stringify(data, null, 2);
@@ -1434,7 +1434,7 @@
                 if (callback) callback(content, content);
                 return content;
             } catch (error) {
-                console.error('Synthesis Sync Lost:', error);
+                console.error('Creation Sync Lost:', error);
                 throw error;
             }
         }
@@ -1460,7 +1460,7 @@
                     });
                     messageStack.push({ role: 'assistant', content: finalCode });
                 } catch (e) {
-                    doc.write(`<div style="color:red; background:#000; padding:20px;">Synthesis Error: ${e.message}</div>`);
+                    doc.write(`<div style="color:red; background:#000; padding:20px;">Creation Error: ${e.message}</div>`);
                     doc.close();
                 }
             } else {
@@ -1480,7 +1480,7 @@
                     messageStack.push({ role: 'assistant', content: finalChat });
                     renderChat();
                 } catch (e) {
-                    messageStack.push({ role: 'assistant', content: "Synthesis sync lost." });
+                    messageStack.push({ role: 'assistant', content: "Creation sync lost." });
                     renderChat();
                 }
             }
@@ -1492,20 +1492,27 @@
         async function attemptGeneration(prompt) {
             if (!prompt) return;
 
+            // Check if user is signed in for any generation
+            if (!window.currentUser) {
+                alert("Please sign in to use the Creation tools. Click the account icon in the sidebar to sign in.");
+                return;
+            }
+
             const activeModelEl = dockMenu.querySelector('.model-option.selected') || dropdown.querySelector('.model-option.selected');
             const cost = parseInt(activeModelEl?.getAttribute('data-cost') || "0");
 
             if (cost > 0) {
                 if (!window.currentUser) {
-                    alert(`You must be signed in to use this model. It costs ${cost} credits.`);
+                    alert("Please sign in to use paid models. Click the account icon in the sidebar to sign in.");
                     return;
                 }
-
                 if (window.userCredits < cost) {
-                    alert(`Insufficient credits! You need ${cost} credits but have ${window.userCredits}.`);
+                    alert(`Insufficient credits! You need ${cost} credits but only have ${window.userCredits}. Credits are added automatically over time or you can sign in for more.`);
                     return;
                 }
+            }
 
+            if (cost > 0) {
                 const success = window.deductCredits(cost);
                 if (!success) {
                     alert("Failed to deduct credits.");
@@ -1590,7 +1597,13 @@
         // --- Firebase Sycn & Screenshot Engine ---
         const deployBtn = document.querySelector('.exit-editor:not(#close-project-view)');
         deployBtn.addEventListener('click', async () => {
-            const title = prompt("Enter a title for your project:") || "Untitled Synthesis";
+            // Check if user is signed in before allowing project posting
+            if (!window.currentUser) {
+                alert("Please sign in to post projects. Click the account icon in the sidebar to sign in.");
+                return;
+            }
+
+            const title = prompt("Enter a title for your project:") || "Untitled Creation";
             deployBtn.textContent = "Deploying...";
 
             try {
@@ -1657,19 +1670,28 @@
 
             Object.entries(projectsData).reverse().forEach(([id, project]) => {
                 if (!project) return;
-                const title = project.title || "Untitled Synthesis";
+                const title = project.title || "Untitled Creation";
                 const thumbnail = project.thumbnail || "";
                 const avatar = title[0].toUpperCase();
 
                 const card = document.createElement('div');
                 card.className = 'project-card';
+                
+                const authorName = project.author?.name || "Anonymous";
+                const authorPhoto = project.author?.photo || null;
+                const createdDate = project.timestamp ? new Date(project.timestamp).toLocaleDateString() : 'Recent';
+                
+                // Use author's PFP if available, otherwise use title initial
+                const avatarContent = authorPhoto ? '' : avatar;
+                const avatarStyle = authorPhoto ? `style="background: url('${authorPhoto}') center/cover; background-size: cover;"` : '';
+                
                 card.innerHTML = `
                     <div class="card-thumbnail" ${thumbnail ? `style="background-image: url('${thumbnail}'); background-size: cover; background-position: center;"` : ''}></div>
                     <div class="card-details">
-                        <div class="card-avatar">${avatar}</div>
+                        <div class="card-avatar" ${avatarStyle}>${avatarContent}</div>
                         <div class="card-info">
                             <div class="project-title">${title}</div>
-                            <div class="project-meta">Synthesis &bull; ${project.timestamp ? new Date(project.timestamp).toLocaleDateString() : 'Recent'}</div>
+                            <div class="project-meta">by ${authorName} &bull; ${createdDate}</div>
                         </div>
                     </div>
                 `;
@@ -1691,8 +1713,9 @@
                         authorAvatar.style.background = `url(${project.author.photo}) center/cover`;
                         authorAvatar.style.backgroundSize = "cover";
                     } else {
-                        authorName.textContent = "Synthesis Core";
-                        authorAvatar.style.background = "#ccc";
+                        authorName.textContent = "BrushAI";
+                        authorAvatar.style.background = "url('https://api.dicebear.com/7.x/avataaars/svg?seed=BrushAI&backgroundColor=b6e3f4,c0aede,d1d4f9&radius=50') center/cover";
+                        authorAvatar.style.backgroundSize = "cover";
                     }
 
                     // Like Trigger
