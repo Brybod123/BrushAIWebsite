@@ -1616,14 +1616,18 @@
                     scale: 0.5
                 });
                 
-                // Convert canvas to blob
+                // Convert canvas to bytes directly
                 canvas.toBlob(async (blob) => {
+                    // Convert blob to bytes
+                    const arrayBuffer = await blob.arrayBuffer();
+                    const bytes = new Uint8Array(arrayBuffer);
+                    
                     const fileName = `thumbnail-${Date.now()}-${Math.random().toString(36).substr(2, 9)}.webp`;
                     
-                    // Upload to Supabase Storage
+                    // Upload to Supabase Storage with bytes
                     const { data, error } = await window.supabase.storage
                         .from('BrushStorage')
-                        .upload(fileName, blob, {
+                        .upload(fileName, bytes, {
                             contentType: 'image/webp',
                             cacheControl: '3600',
                             upsert: false
